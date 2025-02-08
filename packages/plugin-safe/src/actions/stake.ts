@@ -48,19 +48,20 @@ const buildTransferDetails = async (
 export const stake: Action = {
   name: "STAKE",
   similes: [
-    "SEND_TRANSACTION",
-    "SUBMIT_TRANSACTION",
-    "PROCESS_TRANSACTION",
-    "TRANSFER",
-    "SEND_TX",
-    "EXECUTE_TX",
-    "PERFORM_TRANSACTION",
-    "BROADCAST_TRANSACTION",
+    "SUPPLY_TO_AAVE",
+    "DEPOSIT_TO_AAVE",
+    "LEND_ON_AAVE",
+    "STAKE_ON_AAVE",
+    "PROVIDE_LIQUIDITY_AAVE",
+    "AAVE_DEPOSIT",
+    "AAVE_SUPPLY",
+    "AAVE_STAKE",
   ],
   validate: async (_runtime: IAgentRuntime, _message: Memory) => {
     return true;
   },
-  description: "",
+  description:
+    "Supplies/stakes tokens to the AAVE lending protocol to earn yield",
   handler: async (
     _runtime: IAgentRuntime,
     _message: Memory
@@ -71,14 +72,21 @@ export const stake: Action = {
       safeAddress: process.env.SAFE_ADDRESS,
     });
 
-    const user = preExistingSafe.getAddress();
+    const user = await preExistingSafe.getAddress();
 
-    const args = {};
+    const USDT = "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0";
+
+    const args: readonly [`0x${string}`, bigint, `0x${string}`, number] = [
+      USDT as `0x${string}`,
+      BigInt("0"),
+      user as `0x${string}`,
+      0,
+    ];
 
     const data = encodeFunctionData({
       abi: poolAbi,
       functionName: "supply",
-      args: [],
+      args: args,
     });
 
     const tx = await preExistingSafe.createTransaction({
@@ -99,13 +107,13 @@ export const stake: Action = {
     [
       {
         user: "{{user1}}",
-        content: { text: "Can you send 0.1 ETH to 0x123...789?" },
+        content: { text: "I want to supply 1000 USDT to AAVE" },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "I'll execute that transaction for you now",
-          action: "EXECUTE_TRANSACTION",
+          text: "I'll help you supply your USDT to the AAVE lending pool to earn yield",
+          action: "STAKE",
         },
       },
     ],
@@ -114,14 +122,14 @@ export const stake: Action = {
       {
         user: "{{user1}}",
         content: {
-          text: "Please transfer 50 USDC to Bob's wallet",
+          text: "Can you deposit my ETH into AAVE for lending?",
         },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "Initiating the USDC transfer to Bob's address",
-          action: "EXECUTE_TRANSACTION",
+          text: "I'll help you supply your ETH to AAVE. This will earn you aETH tokens representing your deposit",
+          action: "STAKE",
         },
       },
     ],
@@ -130,14 +138,14 @@ export const stake: Action = {
       {
         user: "{{user1}}",
         content: {
-          text: "I need to swap 10 ETH for DAI using Uniswap",
+          text: "How do I earn yield on my USDC using AAVE?",
         },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "I'll execute this swap transaction on Uniswap for you",
-          action: "EXECUTE_TRANSACTION",
+          text: "I can help you supply your USDC to AAVE's lending pool. You'll earn interest and receive aUSDC tokens in return",
+          action: "STAKE",
         },
       },
     ],
@@ -146,14 +154,14 @@ export const stake: Action = {
       {
         user: "{{user1}}",
         content: {
-          text: "Could you stake 100 MATIC in the validator contract?",
+          text: "Supply 500 DAI to AAVE please",
         },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "Processing your staking transaction now",
-          action: "EXECUTE_TRANSACTION",
+          text: "I'll process your DAI deposit to AAVE. You'll start earning yield immediately",
+          action: "STAKE",
         },
       },
     ],
@@ -162,14 +170,14 @@ export const stake: Action = {
       {
         user: "{{user1}}",
         content: {
-          text: "Execute the smart contract function approve() with 1000 tokens",
+          text: "I'd like to become an AAVE liquidity provider with my WBTC",
         },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "Executing the approve function with specified parameters",
-          action: "EXECUTE_TRANSACTION",
+          text: "I'll help you supply your WBTC to AAVE's lending pool. You'll receive aWBTC tokens representing your position",
+          action: "STAKE",
         },
       },
     ],
@@ -178,14 +186,14 @@ export const stake: Action = {
       {
         user: "{{user1}}",
         content: {
-          text: "Bridge 5 ETH from Ethereum to Polygon",
+          text: "What's the process for lending my tokens on AAVE?",
         },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "Initiating the bridge transaction",
-          action: "EXECUTE_TRANSACTION",
+          text: "I can help you supply your tokens to AAVE. This will allow you to earn interest while maintaining the ability to withdraw anytime",
+          action: "STAKE",
         },
       },
     ],
@@ -194,14 +202,14 @@ export const stake: Action = {
       {
         user: "{{user1}}",
         content: {
-          text: "Mint an NFT from this collection: 0xabc...def",
+          text: "Put my MATIC into AAVE's lending pool",
         },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "Processing your NFT mint transaction",
-          action: "EXECUTE_TRANSACTION",
+          text: "I'll help you supply your MATIC to AAVE. You'll receive aMATIC tokens and start earning yield",
+          action: "STAKE",
         },
       },
     ],
@@ -210,14 +218,14 @@ export const stake: Action = {
       {
         user: "{{user1}}",
         content: {
-          text: "Vote on proposal #123 in the DAO",
+          text: "I want to earn interest on my stablecoins using AAVE",
         },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "Submitting your vote transaction to the DAO",
-          action: "EXECUTE_TRANSACTION",
+          text: "I'll help you supply your stablecoins to AAVE's lending pool to start earning yield",
+          action: "STAKE",
         },
       },
     ],
