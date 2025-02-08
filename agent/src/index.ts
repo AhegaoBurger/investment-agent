@@ -53,6 +53,7 @@ import { zgPlugin } from "@elizaos/plugin-0g";
 // import { searchPlugin } from "@elizaos/plugin-tavily"
 import { webSearchPlugin } from "@elizaos/plugin-tavily";
 // import { webSearchPlugin } from "@elizaos/plugin-web-search";
+import { safePlugin } from "@elizaos/plugin-safe";
 
 import { bootstrapPlugin } from "@elizaos/plugin-bootstrap";
 import { normalizeCharacter } from "@elizaos/plugin-di";
@@ -974,6 +975,7 @@ export async function createAgent(
         : null,
       // getSecret(character, "TAVILY_API_KEY") ? webSearchPlugin : null,
       getSecret(character, "TAVILY_API_KEY") ? webSearchPlugin : null,
+      getSecret(character, "SAFE_ADDRESS") ? safePlugin : null,
       getSecret(character, "SOLANA_PUBLIC_KEY") ||
       (getSecret(character, "WALLET_PUBLIC_KEY") &&
         !getSecret(character, "WALLET_PUBLIC_KEY")?.startsWith("0x"))

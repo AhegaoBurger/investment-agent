@@ -9,41 +9,44 @@ import {
   ModelClass,
   type State,
 } from "@elizaos/core";
+
 import Safe from "@safe-global/protocol-kit";
+
 import { encodeFunctionData } from "viem";
 import { poolAbi } from "../abi";
 import type { Transaction, TransferParams } from "../types";
 import { transferTemplate } from "../templates";
+import { Wallet } from "ethers";
 
-const buildTransferDetails = async (
-  state: State,
-  runtime: IAgentRuntime
-): Promise<TransferParams> => {
-  // const chains = Object.keys(wp.chains);
-  // state.supportedChains = chains.map((item) => `"${item}"`).join("|");
+// const buildTransferDetails = async (
+//   state: State,
+//   runtime: IAgentRuntime
+// ): Promise<TransferParams> => {
+//   // const chains = Object.keys(wp.chains);
+//   // state.supportedChains = chains.map((item) => `"${item}"`).join("|");
 
-  const context = composeContext({
-    state,
-    template: transferTemplate,
-  });
+//   const context = composeContext({
+//     state,
+//     template: transferTemplate,
+//   });
 
-  const transferDetails = (await generateObjectDeprecated({
-    runtime,
-    context,
-    modelClass: ModelClass.SMALL,
-  })) as TransferParams;
+//   const transferDetails = (await generateObjectDeprecated({
+//     runtime,
+//     context,
+//     modelClass: ModelClass.SMALL,
+//   })) as TransferParams;
 
-  // if (!existingChain) {
-  //   throw new Error(
-  //     "The chain " +
-  //       transferDetails.fromChain +
-  //       " not configured yet. Add the chain or choose one from configured: " +
-  //       chains.toString()
-  //   );
-  // }
+//   // if (!existingChain) {
+//   //   throw new Error(
+//   //     "The chain " +
+//   //       transferDetails.fromChain +
+//   //       " not configured yet. Add the chain or choose one from configured: " +
+//   //       chains.toString()
+//   //   );
+//   // }
 
-  return transferDetails;
-};
+//   return transferDetails;
+// };
 
 export const stake: Action = {
   name: "STAKE",
@@ -66,13 +69,54 @@ export const stake: Action = {
     _runtime: IAgentRuntime,
     _message: Memory
   ): Promise<boolean> => {
-    const preExistingSafe = await Safe.init({
+    console.log(
+      "process.env.RPC_URL",
+      process.env.RPC_URL,
+      "process.env.AGENT_PRIVATE_KEY",
+      process.env.AGENT_PRIVATE_KEY,
+      "process.env.SAFE_ADDRESS",
+      process.env.SAFE_ADDRESS
+    );
+
+    const exSafe = Safe.default;
+
+    // console.log("process.env.RPC_URL", process.env.RPC_URL);
+    // console.log("//////////////////////////");
+    // console.log("//////////////////////////");
+    // console.log(Safe);
+    // console.log("//////////////////////////");
+    // console.log(Safe.default);
+    // console.log("//////////////////////////");
+    // console.log(Safe.default.init);
+    // console.log("//////////////////////////");
+    // console.log("//////////////////////////");
+
+    const privateKey = process.env.AGENT_PRIVATE_KEY;
+
+    console.log("privateKey", privateKey);
+
+    try {
+      const wallet = new Wallet(privateKey);
+      console.log("Valid private key! Address:", wallet.address);
+    } catch (error) {
+      console.error("Invalid private key:", error.message);
+    }
+
+    if (!privateKey || !/^[0-9a-fA-F]{64}$/.test(privateKey)) {
+      throw new Error("Invalid private key format");
+    }
+
+    const preExistingSafe = await exSafe.init({
       provider: process.env.RPC_URL,
       signer: process.env.AGENT_PRIVATE_KEY,
       safeAddress: process.env.SAFE_ADDRESS,
     });
 
+    console.log("preExistingSafe", preExistingSafe);
+
     const user = await preExistingSafe.getAddress();
+
+    console.log("user:", user);
 
     const USDT = "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0";
 
@@ -82,6 +126,8 @@ export const stake: Action = {
       user as `0x${string}`,
       0,
     ];
+
+    console.log("args:", args);
 
     const data = encodeFunctionData({
       abi: poolAbi,
@@ -99,7 +145,11 @@ export const stake: Action = {
       ],
     });
 
+    console.log("transaction created", tx);
+
     preExistingSafe.executeTransaction(tx);
+
+    console.log("transaction executed", tx);
 
     return true;
   },

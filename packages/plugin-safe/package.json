@@ -21,7 +21,7 @@
   "dependencies": {
     "@elizaos/core": "workspace:*",
     "tsup": "8.3.5",
-    "@safe-global/protocol-kit": "^5.1.1",
+    "@safe-global/protocol-kit": "5.2.1",
     "@safe-global/types-kit": "^1.0.1",
     "@safe-global/api-kit": "^2.5.6",
     "@aave/contract-helpers": "^1.31.1",
