@@ -1,12 +1,49 @@
-import type {
-  ActionExample,
-  IAgentRuntime,
-  Memory,
-  Action,
+import {
+  type ActionExample,
+  type IAgentRuntime,
+  type Memory,
+  type Action,
+  composeContext,
+  generateObjectDeprecated,
+  type HandlerCallback,
+  ModelClass,
+  type State,
 } from "@elizaos/core";
 import Safe from "@safe-global/protocol-kit";
 import { encodeFunctionData } from "viem";
-import { poolAbi } from "../abi/abi";
+import { poolAbi } from "../abi";
+import type { Transaction, TransferParams } from "../types";
+import { transferTemplate } from "../templates";
+
+const buildTransferDetails = async (
+  state: State,
+  runtime: IAgentRuntime
+): Promise<TransferParams> => {
+  // const chains = Object.keys(wp.chains);
+  // state.supportedChains = chains.map((item) => `"${item}"`).join("|");
+
+  const context = composeContext({
+    state,
+    template: transferTemplate,
+  });
+
+  const transferDetails = (await generateObjectDeprecated({
+    runtime,
+    context,
+    modelClass: ModelClass.SMALL,
+  })) as TransferParams;
+
+  // if (!existingChain) {
+  //   throw new Error(
+  //     "The chain " +
+  //       transferDetails.fromChain +
+  //       " not configured yet. Add the chain or choose one from configured: " +
+  //       chains.toString()
+  //   );
+  // }
+
+  return transferDetails;
+};
 
 export const stake: Action = {
   name: "STAKE",
