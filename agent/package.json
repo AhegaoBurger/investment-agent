@@ -49,6 +49,7 @@
     "@elizaos/plugin-bnb": "workspace:*",
     "@elizaos/plugin-bootstrap": "workspace:*",
     "@elizaos/plugin-tavily": "workspace:*",
+    "@elizaos/plugin-safe": "workspace:*",
     "@elizaos/plugin-di": "workspace:*",
     "@elizaos/plugin-intiface": "workspace:*",
     "@elizaos/plugin-coinbase": "workspace:*",

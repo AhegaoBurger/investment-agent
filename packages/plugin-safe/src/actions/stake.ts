@@ -5,17 +5,11 @@ import type {
   Action,
 } from "@elizaos/core";
 import Safe from "@safe-global/protocol-kit";
+import { encodeFunctionData } from "viem";
+import { poolAbi } from "../abi/abi";
 
-async function stuff() {
-  const existingSafe = await Safe.init({
-    provider: process.env.RPC_URL,
-    signer: process.env.AGENT_PRIVATE_KEY,
-    safeAddress: process.env.SAFE_ADDRESS,
-  });
-}
-
-export const executeTransaction: Action = {
-  name: "EXECUTE_TRANSACTION",
+export const stake: Action = {
+  name: "STAKE",
   similes: [
     "SEND_TRANSACTION",
     "SUBMIT_TRANSACTION",
@@ -29,8 +23,7 @@ export const executeTransaction: Action = {
   validate: async (_runtime: IAgentRuntime, _message: Memory) => {
     return true;
   },
-  description:
-    "Execute a blockchain transaction. This action is used when the agent needs to perform operations like sending tokens, interacting with smart contracts, swapping assets, staking, voting, or any other on-chain transaction that requires signing and broadcasting to the network. The transaction details should be validated and processed according to the specific blockchain protocol requirements.",
+  description: "",
   handler: async (
     _runtime: IAgentRuntime,
     _message: Memory
@@ -40,6 +33,27 @@ export const executeTransaction: Action = {
       signer: process.env.AGENT_PRIVATE_KEY,
       safeAddress: process.env.SAFE_ADDRESS,
     });
+
+    const user = preExistingSafe.getAddress();
+
+    const data = encodeFunctionData({
+      abi: poolAbi,
+      functionName: "supply",
+      args: [],
+    });
+
+    const tx = await preExistingSafe.createTransaction({
+      transactions: [
+        {
+          to: "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951", // AAVE pool address on sepolia
+          data: data,
+          value: "0",
+        },
+      ],
+    });
+
+    preExistingSafe.executeTransaction(tx);
+
     return true;
   },
   examples: [
