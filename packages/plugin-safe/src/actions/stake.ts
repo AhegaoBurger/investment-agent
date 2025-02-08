@@ -36,6 +36,8 @@ export const stake: Action = {
 
     const user = preExistingSafe.getAddress();
 
+    const args = {};
+
     const data = encodeFunctionData({
       abi: poolAbi,
       functionName: "supply",
