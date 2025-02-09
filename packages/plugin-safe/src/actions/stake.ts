@@ -13,10 +13,10 @@ import {
 import Safe from "@safe-global/protocol-kit";
 
 import { encodeFunctionData } from "viem";
-import { poolAbi } from "../abi";
+import { AavePoolAbi } from "../abi/AavePool";
+import { UsdcTokenAbi } from "../abi/UsdcToken";
 // import type { Transaction, TransferParams } from "../types";
 // import { transferTemplate } from "../templates";
-import { Wallet } from "ethers";
 import { MetaTransactionData, OperationType } from "@safe-global/types-kit";
 
 // const buildTransferDetails = async (
@@ -81,80 +81,64 @@ export const stake: Action = {
 
     const exSafe = Safe.default;
 
-    console.log("process.env.RPC_URL", process.env.RPC_URL);
-    console.log("//////////////////////////");
-    console.log("//////////////////////////");
-    console.log(Safe);
-    console.log("//////////////////////////");
-    console.log("Safe.default; ", Safe.default);
-    console.log("//////////////////////////");
-    console.log("Safe.default.init; ", Safe.default.init);
-    console.log("Safe.init; ", Safe.init);
-    console.log("//////////////////////////");
-    console.log("//////////////////////////");
+    const agentPrivateKey = process.env.AGENT_PRIVATE_KEY;
+    const safeAddress = "0x6485A7046704ca7127B6D9Db3a3519F41C4976c0";
+    const aavePoolSepoliaAddress = "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951";
+    const USDC_SEPOLIA_ADDRESS = "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8";
 
-    const privateKey = process.env.AGENT_PRIVATE_KEY;
-
-    console.log("privateKey", privateKey);
-
-    try {
-      const wallet = new Wallet(privateKey);
-      console.log("Valid private key! Address:", wallet.address);
-    } catch (error) {
-      console.error("Invalid private key:", error.message);
-    }
-
-    if (!privateKey || !/^[0-9a-fA-F]{64}$/.test(privateKey)) {
-      throw new Error("Invalid private key format");
-    }
-
-    // const testSafe = await Safe.init({})
-
-    // const test = await testSafe.createTransaction({
-    //     transactions: {}
-    //     onlyCalls: true
-    // })
+    const amount = 150;
 
     const preExistingSafe = await exSafe.init({
       provider: process.env.RPC_URL,
-      signer: process.env.AGENT_PRIVATE_KEY,
-      safeAddress: process.env.SAFE_ADDRESS,
+      signer: agentPrivateKey,
+      safeAddress: safeAddress,
     });
 
     console.log("preExistingSafe", preExistingSafe);
 
-    const user = await preExistingSafe.getAddress();
-
-    console.log("user:", user);
-
-    const USDT = "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0";
-
-    const args: readonly [`0x${string}`, bigint, `0x${string}`, number] = [
-      USDT as `0x${string}`, // USDT address
-      BigInt("100000000000000000"), // 100000000000000000 wei
-      user as `0x${string}`,
-      0,
-    ];
-
-    console.log("args:", args);
-
-    const data = encodeFunctionData({
-      abi: poolAbi,
-      functionName: "supply",
-      args: args,
+    const callDataUSDCApprove = encodeFunctionData({
+      abi: UsdcTokenAbi,
+      functionName: "approve",
+      args: [aavePoolSepoliaAddress, BigInt(amount)],
     });
 
-    const safeTransactionData: MetaTransactionData = {
-      // to: "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951", // AAVE pool proxy address on sepolia
-      to: "0xe3F3f22367C359770b085DD23980610eA5815b4f", // My address for testing
-      value: "100000000000000000", // 100000000000000000 wei or 0.1 eth
-      // data: data, // aave transfer data
-      data: "0x", // test data
+    console.log("callDataUSDCApprove: ", callDataUSDCApprove);
+
+    const safeUsdcApproveTx: MetaTransactionData = {
+      to: USDC_SEPOLIA_ADDRESS,
+      // value: amount.toString(),
+      value: "0",
+      data: callDataUSDCApprove,
       operation: OperationType.Call,
     };
 
+    console.log("safeUsdcApproveTx: ", safeUsdcApproveTx);
+
+    const callDataAAveDeposit = encodeFunctionData({
+      abi: AavePoolAbi,
+      functionName: "supply",
+      args: [USDC_SEPOLIA_ADDRESS, BigInt(amount), safeAddress, 0],
+    });
+
+    console.log("callDataAAveDeposit: ", callDataAAveDeposit);
+
+    const safeAaveDepositTx: MetaTransactionData = {
+      // to: "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951", // AAVE pool proxy address on sepolia
+      // to: "0xe3F3f22367C359770b085DD23980610eA5815b4f", // My address for testing
+      to: aavePoolSepoliaAddress,
+      // value: "100000000000000000", // 100000000000000000 wei or 0.1 eth
+      value: "0",
+      // data: data, // aave transfer data
+      // data: "0x", // test data
+      data: callDataAAveDeposit,
+      operation: OperationType.Call,
+    };
+
+    console.log("safeAaveDepositTx: ", safeAaveDepositTx);
+
     const tx = await preExistingSafe.createTransaction({
-      transactions: [safeTransactionData],
+      transactions: [safeUsdcApproveTx, safeAaveDepositTx],
+      onlyCalls: true,
     });
 
     console.log("transaction created", tx);
