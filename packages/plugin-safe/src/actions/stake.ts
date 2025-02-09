@@ -14,9 +14,10 @@ import Safe from "@safe-global/protocol-kit";
 
 import { encodeFunctionData } from "viem";
 import { poolAbi } from "../abi";
-import type { Transaction, TransferParams } from "../types";
-import { transferTemplate } from "../templates";
+// import type { Transaction, TransferParams } from "../types";
+// import { transferTemplate } from "../templates";
 import { Wallet } from "ethers";
+import { MetaTransactionData, OperationType } from "@safe-global/types-kit";
 
 // const buildTransferDetails = async (
 //   state: State,
@@ -80,16 +81,17 @@ export const stake: Action = {
 
     const exSafe = Safe.default;
 
-    // console.log("process.env.RPC_URL", process.env.RPC_URL);
-    // console.log("//////////////////////////");
-    // console.log("//////////////////////////");
-    // console.log(Safe);
-    // console.log("//////////////////////////");
-    // console.log(Safe.default);
-    // console.log("//////////////////////////");
-    // console.log(Safe.default.init);
-    // console.log("//////////////////////////");
-    // console.log("//////////////////////////");
+    console.log("process.env.RPC_URL", process.env.RPC_URL);
+    console.log("//////////////////////////");
+    console.log("//////////////////////////");
+    console.log(Safe);
+    console.log("//////////////////////////");
+    console.log("Safe.default; ", Safe.default);
+    console.log("//////////////////////////");
+    console.log("Safe.default.init; ", Safe.default.init);
+    console.log("Safe.init; ", Safe.init);
+    console.log("//////////////////////////");
+    console.log("//////////////////////////");
 
     const privateKey = process.env.AGENT_PRIVATE_KEY;
 
@@ -106,6 +108,13 @@ export const stake: Action = {
       throw new Error("Invalid private key format");
     }
 
+    // const testSafe = await Safe.init({})
+
+    // const test = await testSafe.createTransaction({
+    //     transactions: {}
+    //     onlyCalls: true
+    // })
+
     const preExistingSafe = await exSafe.init({
       provider: process.env.RPC_URL,
       signer: process.env.AGENT_PRIVATE_KEY,
@@ -121,8 +130,8 @@ export const stake: Action = {
     const USDT = "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0";
 
     const args: readonly [`0x${string}`, bigint, `0x${string}`, number] = [
-      USDT as `0x${string}`,
-      BigInt("0"),
+      USDT as `0x${string}`, // USDT address
+      BigInt("100000000000000000"), // 100000000000000000 wei
       user as `0x${string}`,
       0,
     ];
@@ -135,21 +144,24 @@ export const stake: Action = {
       args: args,
     });
 
+    const safeTransactionData: MetaTransactionData = {
+      // to: "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951", // AAVE pool proxy address on sepolia
+      to: "0xe3F3f22367C359770b085DD23980610eA5815b4f", // My address for testing
+      value: "100000000000000000", // 100000000000000000 wei or 0.1 eth
+      // data: data, // aave transfer data
+      data: "0x", // test data
+      operation: OperationType.Call,
+    };
+
     const tx = await preExistingSafe.createTransaction({
-      transactions: [
-        {
-          to: "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951", // AAVE pool address on sepolia
-          data: data,
-          value: "0",
-        },
-      ],
+      transactions: [safeTransactionData],
     });
 
     console.log("transaction created", tx);
 
-    preExistingSafe.executeTransaction(tx);
+    const txResponse = await preExistingSafe.executeTransaction(tx);
 
-    console.log("transaction executed", tx);
+    console.log("transaction executed", txResponse);
 
     return true;
   },

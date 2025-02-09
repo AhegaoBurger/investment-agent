@@ -23,7 +23,7 @@ import { XmtpClientInterface } from "@elizaos/client-xmtp";
 import { DirectClient } from "@elizaos/client-direct";
 // import { agentKitPlugin } from "@elizaos/plugin-agentkit";
 import { gelatoPlugin } from "@elizaos/plugin-gelato";
-import { PrimusAdapter } from "@elizaos/plugin-primus";
+// import { PrimusAdapter } from "@elizaos/plugin-primus";
 import { lightningPlugin } from "@elizaos/plugin-lightning";
 import { elizaCodeinPlugin, onchainJson } from "@elizaos/plugin-iq6900";
 import { dcapPlugin } from "@elizaos/plugin-dcap";
@@ -907,41 +907,41 @@ export async function createAgent(
   //     elizaLogger.log("Verifiable inference adapter initialized");
   // }
   // Initialize Opacity adapter if environment variables are present
-  let verifiableInferenceAdapter;
-  if (
-    process.env.OPACITY_TEAM_ID &&
-    process.env.OPACITY_CLOUDFLARE_NAME &&
-    process.env.OPACITY_PROVER_URL &&
-    process.env.VERIFIABLE_INFERENCE_ENABLED === "true"
-  ) {
-    verifiableInferenceAdapter = new OpacityAdapter({
-      teamId: process.env.OPACITY_TEAM_ID,
-      teamName: process.env.OPACITY_CLOUDFLARE_NAME,
-      opacityProverUrl: process.env.OPACITY_PROVER_URL,
-      modelProvider: character.modelProvider,
-      token: token,
-    });
-    elizaLogger.log("Verifiable inference adapter initialized");
-    elizaLogger.log("teamId", process.env.OPACITY_TEAM_ID);
-    elizaLogger.log("teamName", process.env.OPACITY_CLOUDFLARE_NAME);
-    elizaLogger.log("opacityProverUrl", process.env.OPACITY_PROVER_URL);
-    elizaLogger.log("modelProvider", character.modelProvider);
-    elizaLogger.log("token", token);
-  }
-  if (
-    process.env.PRIMUS_APP_ID &&
-    process.env.PRIMUS_APP_SECRET &&
-    process.env.VERIFIABLE_INFERENCE_ENABLED === "true"
-  ) {
-    verifiableInferenceAdapter = new PrimusAdapter({
-      appId: process.env.PRIMUS_APP_ID,
-      appSecret: process.env.PRIMUS_APP_SECRET,
-      attMode: "proxytls",
-      modelProvider: character.modelProvider,
-      token,
-    });
-    elizaLogger.log("Verifiable inference primus adapter initialized");
-  }
+  // let verifiableInferenceAdapter;
+  // if (
+  //   process.env.OPACITY_TEAM_ID &&
+  //   process.env.OPACITY_CLOUDFLARE_NAME &&
+  //   process.env.OPACITY_PROVER_URL &&
+  //   process.env.VERIFIABLE_INFERENCE_ENABLED === "true"
+  // ) {
+  //   verifiableInferenceAdapter = new OpacityAdapter({
+  //     teamId: process.env.OPACITY_TEAM_ID,
+  //     teamName: process.env.OPACITY_CLOUDFLARE_NAME,
+  //     opacityProverUrl: process.env.OPACITY_PROVER_URL,
+  //     modelProvider: character.modelProvider,
+  //     token: token,
+  //   });
+  //   elizaLogger.log("Verifiable inference adapter initialized");
+  //   elizaLogger.log("teamId", process.env.OPACITY_TEAM_ID);
+  //   elizaLogger.log("teamName", process.env.OPACITY_CLOUDFLARE_NAME);
+  //   elizaLogger.log("opacityProverUrl", process.env.OPACITY_PROVER_URL);
+  //   elizaLogger.log("modelProvider", character.modelProvider);
+  //   elizaLogger.log("token", token);
+  // }
+  // if (
+  //   process.env.PRIMUS_APP_ID &&
+  //   process.env.PRIMUS_APP_SECRET &&
+  //   process.env.VERIFIABLE_INFERENCE_ENABLED === "true"
+  // ) {
+  //   verifiableInferenceAdapter = new PrimusAdapter({
+  //     appId: process.env.PRIMUS_APP_ID,
+  //     appSecret: process.env.PRIMUS_APP_SECRET,
+  //     attMode: "proxytls",
+  //     modelProvider: character.modelProvider,
+  //     token,
+  //   });
+  //   elizaLogger.log("Verifiable inference primus adapter initialized");
+  // }
 
   return new AgentRuntime({
     databaseAdapter: db,
@@ -1174,7 +1174,7 @@ export async function createAgent(
     managers: [],
     cacheManager: cache,
     fetch: logFetch,
-    verifiableInferenceAdapter,
+    // verifiableInferenceAdapter,
   });
 }
 
