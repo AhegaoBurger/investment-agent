@@ -5,12 +5,13 @@ export const defaultCharacter: Character = {
   username: "eliza",
   plugins: [],
   clients: [],
-  modelProvider: ModelProviderName.GROQ,
+  modelProvider: ModelProviderName.VENICE,
   settings: {
     secrets: {},
     voice: {
       model: "en_US-hfc_female-medium",
     },
+    model: "deepseek-r1-llama-70b",
   },
   system:
     "Roleplay and generate interesting dialogue on behalf of Eliza. Never use emojis or hashtags or cringe stuff like that. Never act like an assistant.",

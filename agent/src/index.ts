@@ -22,11 +22,11 @@ import { JeeterClientInterface } from "@elizaos/client-simsai";
 import { XmtpClientInterface } from "@elizaos/client-xmtp";
 import { DirectClient } from "@elizaos/client-direct";
 // import { agentKitPlugin } from "@elizaos/plugin-agentkit";
-import { gelatoPlugin } from "@elizaos/plugin-gelato";
+// import { gelatoPlugin } from "@elizaos/plugin-gelato";
 // import { PrimusAdapter } from "@elizaos/plugin-primus";
-import { lightningPlugin } from "@elizaos/plugin-lightning";
+// import { lightningPlugin } from "@elizaos/plugin-lightning";
 import { elizaCodeinPlugin, onchainJson } from "@elizaos/plugin-iq6900";
-import { dcapPlugin } from "@elizaos/plugin-dcap";
+// import { dcapPlugin } from "@elizaos/plugin-dcap";
 import {
   AgentRuntime,
   CacheManager,
@@ -48,7 +48,8 @@ import {
   stringToUuid,
   validateCharacterConfig,
 } from "@elizaos/core";
-import { zgPlugin } from "@elizaos/plugin-0g";
+// import { zgPlugin } from "@elizaos/plugin-0g";
+//
 // import searchPlugin from "@elizaos/plugin-tavily";
 // import { searchPlugin } from "@elizaos/plugin-tavily"
 import { webSearchPlugin } from "@elizaos/plugin-tavily";
@@ -58,14 +59,14 @@ import { safePlugin } from "@elizaos/plugin-safe";
 import { bootstrapPlugin } from "@elizaos/plugin-bootstrap";
 import { normalizeCharacter } from "@elizaos/plugin-di";
 import createGoatPlugin from "@elizaos/plugin-goat"; // Important
-import createZilliqaPlugin from "@elizaos/plugin-zilliqa";
+import createZilliqaPlugin from "@elizaos/plugin-zilliqa"; // Used for something, not sure what
 
 // import { intifacePlugin } from "@elizaos/plugin-intiface";
-import { aptosPlugin } from "@elizaos/plugin-aptos";
+// import { aptosPlugin } from "@elizaos/plugin-aptos";
 import { avalanchePlugin } from "@elizaos/plugin-avalanche";
 import { binancePlugin } from "@elizaos/plugin-binance";
-import { birdeyePlugin } from "@elizaos/plugin-birdeye";
-import { bnbPlugin } from "@elizaos/plugin-bnb";
+// import { birdeyePlugin } from "@elizaos/plugin-birdeye";
+// import { bnbPlugin } from "@elizaos/plugin-bnb";
 import {
   advancedTradePlugin,
   coinbaseCommercePlugin,
@@ -76,15 +77,15 @@ import {
 } from "@elizaos/plugin-coinbase";
 import { coingeckoPlugin } from "@elizaos/plugin-coingecko";
 import { coinmarketcapPlugin } from "@elizaos/plugin-coinmarketcap";
-import { createCosmosPlugin } from "@elizaos/plugin-cosmos";
+// import { createCosmosPlugin } from "@elizaos/plugin-cosmos";
 import { evmPlugin } from "@elizaos/plugin-evm";
-import { flowPlugin } from "@elizaos/plugin-flow";
-import { fuelPlugin } from "@elizaos/plugin-fuel";
-import { lensPlugin } from "@elizaos/plugin-lens-network";
+// import { flowPlugin } from "@elizaos/plugin-flow";
+// import { fuelPlugin } from "@elizaos/plugin-fuel";
+// import { lensPlugin } from "@elizaos/plugin-lens-network";
 // import { litPlugin } from "@elizaos/plugin-lit";
 import { createNodePlugin } from "@elizaos/plugin-node";
 import { obsidianPlugin } from "@elizaos/plugin-obsidian";
-import { OpacityAdapter } from "@elizaos/plugin-opacity"; // important
+// import { OpacityAdapter } from "@elizaos/plugin-opacity"; // important
 
 import { openWeatherPlugin } from "@elizaos/plugin-open-weather";
 
@@ -989,22 +990,22 @@ export async function createAgent(
         getSecret(character, "WALLET_PUBLIC_KEY")?.startsWith("0x"))
         ? evmPlugin
         : null,
-      (getSecret(character, "EVM_PUBLIC_KEY") ||
-        getSecret(character, "INJECTIVE_PUBLIC_KEY")) &&
-        // getSecret(character, "INJECTIVE_PRIVATE_KEY")
-        //   ? injectivePlugin
-        //   : null,
-        getSecret(character, "COSMOS_RECOVERY_PHRASE") &&
-        getSecret(character, "COSMOS_AVAILABLE_CHAINS") &&
-        createCosmosPlugin(),
+      // (getSecret(character, "EVM_PUBLIC_KEY") ||
+      //   getSecret(character, "INJECTIVE_PUBLIC_KEY")) &&
+      // getSecret(character, "INJECTIVE_PRIVATE_KEY")
+      //   ? injectivePlugin
+      //   : null,
+      // getSecret(character, "COSMOS_RECOVERY_PHRASE") &&
+      // getSecret(character, "COSMOS_AVAILABLE_CHAINS") &&
+      // createCosmosPlugin(),
       (getSecret(character, "SOLANA_PUBLIC_KEY") ||
         (getSecret(character, "WALLET_PUBLIC_KEY") &&
           !getSecret(character, "WALLET_PUBLIC_KEY")?.startsWith("0x"))) &&
       getSecret(character, "SOLANA_ADMIN_PUBLIC_KEY") &&
       getSecret(character, "SOLANA_PRIVATE_KEY") &&
-      getSecret(character, "ZEROG_PRIVATE_KEY")
-        ? zgPlugin
-        : null,
+      // getSecret(character, "ZEROG_PRIVATE_KEY")
+      //   ? zgPlugin
+      //   : null,
       getSecret(character, "COINMARKETCAP_API_KEY")
         ? coinmarketcapPlugin
         : null,
@@ -1054,16 +1055,18 @@ export async function createAgent(
         ? binancePlugin
         : null,
       getSecret(character, "FLOW_ADDRESS") &&
-      getSecret(character, "FLOW_PRIVATE_KEY")
-        ? flowPlugin
-        : null,
+      // getSecret(character, "FLOW_PRIVATE_KEY")
+      //   ? flowPlugin
+      //   : null,
       getSecret(character, "LENS_ADDRESS") &&
-      getSecret(character, "LENS_PRIVATE_KEY")
-        ? lensPlugin
-        : null,
-      getSecret(character, "APTOS_PRIVATE_KEY") ? aptosPlugin : null,
+      // getSecret(character, "LENS_PRIVATE_KEY")
+      //   ? lensPlugin
+      //   : null,
+      // getSecret(character, "APTOS_PRIVATE_KEY") ? aptosPlugin : null,
 
-      getSecret(character, "ZKSYNC_PRIVATE_KEY") ? zksyncEraPlugin : null,
+      getSecret(character, "ZKSYNC_PRIVATE_KEY")
+        ? zksyncEraPlugin
+        : null,
 
       getSecret(character, "TEE_MARLIN") ? teeMarlinPlugin : null,
       getSecret(character, "TON_PRIVATE_KEY") ? tonPlugin : null,
@@ -1077,9 +1080,9 @@ export async function createAgent(
       getSecret(character, "SQUID_API_THROTTLE_INTERVAL")
         ? squidRouterPlugin
         : null,
-      getSecret(character, "FUEL_PRIVATE_KEY") ? fuelPlugin : null,
+      // getSecret(character, "FUEL_PRIVATE_KEY") ? fuelPlugin : null,
       getSecret(character, "AVALANCHE_PRIVATE_KEY") ? avalanchePlugin : null,
-      getSecret(character, "BIRDEYE_API_KEY") ? birdeyePlugin : null,
+      // getSecret(character, "BIRDEYE_API_KEY") ? birdeyePlugin : null,
       getSecret(character, "ECHOCHAMBERS_API_URL") &&
       getSecret(character, "ECHOCHAMBERS_API_KEY")
         ? echoChambersPlugin
@@ -1106,18 +1109,20 @@ export async function createAgent(
       // getSecret(character, "PYTH_MAINNET_PROGRAM_KEY")
       //   ? pythDataPlugin
       //   : null,
-      (getSecret(character, "LND_TLS_CERT") &&
-        getSecret(character, "LND_MACAROON") &&
-        getSecret(character, "LND_SOCKET"))
-        ? lightningPlugin
-        : null,
+      // (getSecret(character, "LND_TLS_CERT") &&
+      //   getSecret(character, "LND_MACAROON") &&
+      //   getSecret(character, "LND_SOCKET"))
+      //   ? lightningPlugin
+      //   : null,
       // getSecret(character, "OPENAI_API_KEY") &&
       // parseBooleanFromText(
       //   getSecret(character, "ENABLE_OPEN_AI_COMMUNITY_PLUGIN")
       // )
       //   ? openaiPlugin
       //   : null,
-      getSecret(character, "DEVIN_API_TOKEN") ? devinPlugin : null,
+      getSecret(character, "DEVIN_API_TOKEN")
+        ? devinPlugin
+        : null,
       getSecret(character, "HOLDSTATION_PRIVATE_KEY")
         ? holdstationPlugin
         : null,
@@ -1126,9 +1131,9 @@ export async function createAgent(
         ? nvidiaNimPlugin
         : null,
       getSecret(character, "BNB_PRIVATE_KEY") ||
-      getSecret(character, "BNB_PUBLIC_KEY")?.startsWith("0x")
-        ? bnbPlugin
-        : null,
+      // getSecret(character, "BNB_PUBLIC_KEY")?.startsWith("0x")
+      //   ? bnbPlugin
+      //   : null,
       (getSecret(character, "EMAIL_INCOMING_USER") &&
         getSecret(character, "EMAIL_INCOMING_PASS")) ||
       (getSecret(character, "EMAIL_OUTGOING_USER") &&
@@ -1154,11 +1159,13 @@ export async function createAgent(
       getSecret(character, "FORM_PRIVATE_KEY") ? formPlugin : null,
       getSecret(character, "ANKR_WALLET") ? ankrPlugin : null,
       getSecret(character, "DCAP_EVM_PRIVATE_KEY") &&
-      getSecret(character, "DCAP_MODE")
-        ? dcapPlugin
+      // getSecret(character, "DCAP_MODE")
+      //   ? dcapPlugin
+      //   : null,
+      getSecret(character, "QUICKINTEL_API_KEY")
+        ? quickIntelPlugin
         : null,
-      getSecret(character, "QUICKINTEL_API_KEY") ? quickIntelPlugin : null,
-      getSecret(character, "GELATO_RELAY_API_KEY") ? gelatoPlugin : null,
+      // getSecret(character, "GELATO_RELAY_API_KEY") ? gelatoPlugin : null,
       getSecret(character, "TRIKON_WALLET_ADDRESS") ? trikonPlugin : null,
       getSecret(character, "ARBITRAGE_EVM_PRIVATE_KEY") &&
       (getSecret(character, "ARBITRAGE_EVM_PROVIDER_URL") ||
