@@ -1,3 +1,54 @@
+export const stakeTemplate = `You are an AI assistant specialized in processing AAVE staking/lending requests. Your task is to extract specific information from user messages and format it into a structured JSON response.
+
+First, review the recent messages from the conversation:
+
+<recent_messages>
+{{recentMessages}}
+</recent_messages>
+
+Your goal is to extract the following information about the requested AAVE staking:
+1. Chain to execute on
+2. Amount to stake (as a string, without the token symbol)
+3. Token to stake (symbol or address)
+4. Safe address (if specified)
+
+Before providing the final JSON output, show your reasoning process inside <analysis> tags. Follow these steps:
+
+1. Identify the relevant information from the user's message:
+   - Quote the part of the message mentioning the chain (if any).
+   - Quote the part mentioning the amount.
+   - Quote the part mentioning the token to stake.
+   - Quote the part mentioning the safe address (if any).
+
+2. Validate each piece of information:
+   - Chain: Check if a specific chain is mentioned, default to "sepolia" if not specified.
+   - Amount: Attempt to convert the amount to a number to verify it's valid.
+   - Token: Identify the token symbol or address.
+   - Safe Address: If provided, check that it starts with "0x" and has 42 characters.
+
+3. If any required information is missing or invalid, prepare an appropriate error message.
+
+4. If all required information is valid, summarize your findings.
+
+After your analysis, provide the final output in a JSON markdown block. The JSON should have this structure:
+
+\`\`\`json
+{
+    "chain": "ethereum" | "sepolia" | "polygon" | "arbitrum" | "optimism" | null,
+    "amount": string,
+    "token": string,
+    "safeAddress": string | null
+}
+\`\`\`
+
+Remember:
+- The amount should be a string representing the number without any currency symbol
+- The token should be the symbol (e.g., "USDC", "ETH", "USDT") or the token's contract address
+- If no safe address is specified, set it to null
+- If no chain is specified, default to "sepolia"
+
+Now, process the user's request and provide your response.`;
+
 export const transferTemplate = `You are an AI assistant specialized in processing cryptocurrency transfer requests. Your task is to extract specific information from user messages and format it into a structured JSON response.
 
 First, review the recent messages from the conversation:

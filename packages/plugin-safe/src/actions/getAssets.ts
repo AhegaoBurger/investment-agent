@@ -15,93 +15,42 @@ import Safe from "@safe-global/protocol-kit";
 import { encodeFunctionData } from "viem";
 import { AavePoolAbi } from "../abi/AavePool";
 import { UsdcTokenAbi } from "../abi/UsdcToken";
-import { stakeTemplate } from "../templates";
+// import type { Transaction, TransferParams } from "../types";
+// import { transferTemplate } from "../templates";
 import { MetaTransactionData, OperationType } from "@safe-global/types-kit";
-import type { StakeParams, StakeResponse } from "../types";
 
-const buildStakeDetails = async (
-  state: State,
-  runtime: IAgentRuntime
-): Promise<StakeParams> => {
-  const context = composeContext({
-    state,
-    template: stakeTemplate,
-  });
+// const buildTransferDetails = async (
+//   state: State,
+//   runtime: IAgentRuntime
+// ): Promise<TransferParams> => {
+//   // const chains = Object.keys(wp.chains);
+//   // state.supportedChains = chains.map((item) => `"${item}"`).join("|");
 
-  const stakeDetails = (await generateObjectDeprecated({
-    runtime,
-    context,
-    modelClass: ModelClass.SMALL,
-  })) as StakeParams;
+//   const context = composeContext({
+//     state,
+//     template: transferTemplate,
+//   });
 
-  return stakeDetails;
-};
+//   const transferDetails = (await generateObjectDeprecated({
+//     runtime,
+//     context,
+//     modelClass: ModelClass.SMALL,
+//   })) as TransferParams;
 
-export class StakeAction {
-  constructor(private safe: typeof Safe) {}
+//   // if (!existingChain) {
+//   //   throw new Error(
+//   //     "The chain " +
+//   //       transferDetails.fromChain +
+//   //       " not configured yet. Add the chain or choose one from configured: " +
+//   //       chains.toString()
+//   //   );
+//   // }
 
-  async stake(params: StakeParams): Promise<StakeResponse> {
-    // const aavePoolAddress = process.env.AAVE_POOL_ADDRESS;
-
-    const agentPrivateKey = process.env.AGENT_PRIVATE_KEY;
-    const safeAddress = "0x6485A7046704ca7127B6D9Db3a3519F41C4976c0";
-    const aavePoolAddress = "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951";
-
-    const preExistingSafe = await this.safe.init({
-      provider: process.env.RPC_URL,
-      signer: agentPrivateKey,
-      safeAddress: safeAddress,
-    });
-
-    // Create approve transaction
-    const callDataTokenApprove = encodeFunctionData({
-      abi: UsdcTokenAbi,
-      functionName: "approve",
-      args: [aavePoolAddress, BigInt(params.amount)],
-    });
-
-    const safeTokenApproveTx: MetaTransactionData = {
-      to: params.token as string, // Token address
-      value: "0",
-      data: callDataTokenApprove,
-      operation: OperationType.Call,
-    };
-
-    // Create supply transaction
-    const callDataAaveSupply = encodeFunctionData({
-      abi: AavePoolAbi,
-      functionName: "supply",
-      args: [params.token, BigInt(params.amount), safeAddress, 0],
-    });
-
-    const safeAaveSupplyTx: MetaTransactionData = {
-      to: aavePoolAddress,
-      value: "0",
-      data: callDataAaveSupply,
-      operation: OperationType.Call,
-    };
-
-    // Create and execute batch transaction
-    const tx = await preExistingSafe.createTransaction({
-      transactions: [safeTokenApproveTx, safeAaveSupplyTx],
-      onlyCalls: true,
-    });
-
-    const txResponse = await preExistingSafe.executeTransaction(tx);
-
-    return {
-      hash: txResponse.hash,
-      from: safeAddress,
-      to: aavePoolAddress,
-      value: BigInt(params.amount),
-      aTokenAddress: "", // You would get this from AAVE's data provider
-      chainId: Number(params.chain),
-    };
-  }
-}
+//   return transferDetails;
+// };
 
 export const stake: Action = {
-  name: "STAKE",
+  name: "GET_ASSETS",
   similes: [
     "SUPPLY_TO_AAVE",
     "DEPOSIT_TO_AAVE",
@@ -118,51 +67,91 @@ export const stake: Action = {
   description:
     "Supplies/stakes tokens to the AAVE lending protocol to earn yield",
   handler: async (
-    runtime: IAgentRuntime,
-    message: Memory,
-    state: State,
-    _options: any,
-    callback?: HandlerCallback
+    _runtime: IAgentRuntime,
+    _message: Memory
   ): Promise<boolean> => {
-    if (!state) {
-      state = (await runtime.composeState(message)) as State;
-    } else {
-      state = await runtime.updateRecentMessageState(state);
-    }
+    console.log(
+      "process.env.RPC_URL",
+      process.env.RPC_URL,
+      "process.env.AGENT_PRIVATE_KEY",
+      process.env.AGENT_PRIVATE_KEY,
+      "process.env.SAFE_ADDRESS",
+      process.env.SAFE_ADDRESS
+    );
 
-    const action = new StakeAction(Safe.default);
+    const exSafe = Safe.default;
 
-    try {
-      // Get stake parameters from the template
-      const stakeParams = await buildStakeDetails(state, runtime);
+    const agentPrivateKey = process.env.AGENT_PRIVATE_KEY;
+    const safeAddress = "0x6485A7046704ca7127B6D9Db3a3519F41C4976c0";
+    const aavePoolSepoliaAddress = "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951";
+    const USDC_SEPOLIA_ADDRESS = "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8";
 
-      // Execute stake operation
-      const stakeResp = await action.stake(stakeParams);
+    const amount = 150;
 
-      if (callback) {
-        callback({
-          text: `Successfully staked ${stakeParams.amount} ${stakeParams.token} to AAVE\nTransaction Hash: ${stakeResp.hash}`,
-          content: {
-            success: true,
-            hash: stakeResp.hash,
-            amount: stakeParams.amount,
-            token: stakeParams.token,
-            chain: stakeParams.chain,
-          },
-        });
-      }
+    const preExistingSafe = await exSafe.init({
+      provider: process.env.RPC_URL,
+      signer: agentPrivateKey,
+      safeAddress: safeAddress,
+    });
 
-      return true;
-    } catch (error) {
-      console.error("Error during AAVE staking:", error);
-      if (callback) {
-        callback({
-          text: `Error staking tokens: ${error.message}`,
-          content: { error: error.message },
-        });
-      }
-      return false;
-    }
+    // const testSafe = await Safe.init({})
+
+    // testSafe.get
+
+    console.log("preExistingSafe", preExistingSafe);
+
+    const callDataUSDCApprove = encodeFunctionData({
+      abi: UsdcTokenAbi,
+      functionName: "approve",
+      args: [aavePoolSepoliaAddress, BigInt(amount)],
+    });
+
+    console.log("callDataUSDCApprove: ", callDataUSDCApprove);
+
+    const safeUsdcApproveTx: MetaTransactionData = {
+      to: USDC_SEPOLIA_ADDRESS,
+      // value: amount.toString(),
+      value: "0",
+      data: callDataUSDCApprove,
+      operation: OperationType.Call,
+    };
+
+    console.log("safeUsdcApproveTx: ", safeUsdcApproveTx);
+
+    const callDataAAveDeposit = encodeFunctionData({
+      abi: AavePoolAbi,
+      functionName: "supply",
+      args: [USDC_SEPOLIA_ADDRESS, BigInt(amount), safeAddress, 0],
+    });
+
+    console.log("callDataAAveDeposit: ", callDataAAveDeposit);
+
+    const safeAaveDepositTx: MetaTransactionData = {
+      // to: "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951", // AAVE pool proxy address on sepolia
+      // to: "0xe3F3f22367C359770b085DD23980610eA5815b4f", // My address for testing
+      to: aavePoolSepoliaAddress,
+      // value: "100000000000000000", // 100000000000000000 wei or 0.1 eth
+      value: "0",
+      // data: data, // aave transfer data
+      // data: "0x", // test data
+      data: callDataAAveDeposit,
+      operation: OperationType.Call,
+    };
+
+    console.log("safeAaveDepositTx: ", safeAaveDepositTx);
+
+    const tx = await preExistingSafe.createTransaction({
+      transactions: [safeUsdcApproveTx, safeAaveDepositTx],
+      onlyCalls: true,
+    });
+
+    console.log("transaction created", tx);
+
+    const txResponse = await preExistingSafe.executeTransaction(tx);
+
+    console.log("transaction executed", txResponse);
+
+    return true;
   },
   examples: [
     [
