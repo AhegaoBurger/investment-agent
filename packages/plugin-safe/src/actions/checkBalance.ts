@@ -166,28 +166,53 @@ export const checkPositions: Action = {
       return response.toString();
     }
 
+    function formatTokenAmount(
+      amount: string | bigint,
+      decimals: number
+    ): string {
+      const amountStr = amount.toString();
+      const value = Number(amountStr) / Math.pow(10, decimals);
+      return value.toFixed(decimals > 5 ? 5 : decimals); // Limit decimal places for readability
+    }
+
+    // Constants for token decimals
+    const DECIMALS = {
+      USDC: 6, // USDC has 6 decimals
+      USDT: 6, // USDT has 6 decimals
+      DAI: 18, // DAI has 18 decimals
+    };
+
     // Format the return object with balances
     const balances = {
       DAI: {
-        wallet: walletBalanceDAI.toString(),
-        aaveDeposited: extractValue(depositBalanceDAI),
+        wallet: formatTokenAmount(walletBalanceDAI, DECIMALS.DAI),
+        aaveDeposited: formatTokenAmount(
+          extractValue(depositBalanceDAI),
+          DECIMALS.DAI
+        ),
       },
       USDC: {
-        wallet: walletBalanceUSDC.toString(),
-        aaveDeposited: extractValue(depositBalanceUSDC),
+        wallet: formatTokenAmount(walletBalanceUSDC, DECIMALS.USDC),
+        aaveDeposited: formatTokenAmount(
+          extractValue(depositBalanceUSDC),
+          DECIMALS.USDC
+        ),
       },
       USDT: {
-        wallet: walletBalanceUSDT.toString(),
-        aaveDeposited: extractValue(depositBalanceUSDT),
+        wallet: formatTokenAmount(walletBalanceUSDT, DECIMALS.USDT),
+        aaveDeposited: formatTokenAmount(
+          extractValue(depositBalanceUSDT),
+          DECIMALS.USDT
+        ),
       },
       ADAI: {
-        wallet: walletBalanceADAI.toString(),
+        wallet: formatTokenAmount(walletBalanceADAI, DECIMALS.DAI),
       },
       AUSDC: {
-        wallet: walletBalanceAUSDC.toString(),
+        wallet: formatTokenAmount(walletBalanceAUSDC, DECIMALS.USDC),
       },
       AUSDT: {
-        wallet: walletBalanceAUSDT.toString(),
+        wallet: formatTokenAmount(walletBalanceAUSDT, DECIMALS.USDT),
       },
     };
 
@@ -198,20 +223,29 @@ export const checkPositions: Action = {
         // Format the balances into a readable text
         const formattedText = `Here are your current positions:
 
-          Wallet Balances:
-          • DAI: ${walletBalanceDAI.toString()} DAI
-          • USDC: ${walletBalanceUSDC.toString()} USDC
-          • USDT: ${walletBalanceUSDT.toString()} USDT
+        Wallet Balances:
+        • DAI: ${formatTokenAmount(walletBalanceDAI, DECIMALS.DAI)} DAI
+        • USDC: ${formatTokenAmount(walletBalanceUSDC, DECIMALS.USDC)} USDC
+        • USDT: ${formatTokenAmount(walletBalanceUSDT, DECIMALS.USDT)} USDT
 
-          AAVE Deposits (aTokens):
-          • aDAI: ${walletBalanceADAI.toString()} aDAI
-          • aUSDC: ${walletBalanceAUSDC.toString()} aUSDC
-          • aUSDT: ${walletBalanceAUSDT.toString()} aUSDT
+        AAVE Deposits (aTokens):
+        • aDAI: ${formatTokenAmount(walletBalanceADAI, DECIMALS.DAI)} aDAI
+        • aUSDC: ${formatTokenAmount(walletBalanceAUSDC, DECIMALS.USDC)} aUSDC
+        • aUSDT: ${formatTokenAmount(walletBalanceAUSDT, DECIMALS.USDT)} aUSDT
 
-          Withdrawable Amounts from AAVE:
-          • DAI: ${extractValue(depositBalanceDAI)} DAI
-          • USDC: ${extractValue(depositBalanceUSDC)} USDC
-          • USDT: ${extractValue(depositBalanceUSDT)} USDT`;
+        Withdrawable Amounts from AAVE:
+        • DAI: ${formatTokenAmount(
+          extractValue(depositBalanceDAI),
+          DECIMALS.DAI
+        )} DAI
+        • USDC: ${formatTokenAmount(
+          extractValue(depositBalanceUSDC),
+          DECIMALS.USDC
+        )} USDC
+        • USDT: ${formatTokenAmount(
+          extractValue(depositBalanceUSDT),
+          DECIMALS.USDT
+        )} USDT`;
 
         callback({
           text: formattedText,
