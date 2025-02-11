@@ -15,6 +15,9 @@ import Safe from "@safe-global/protocol-kit";
 import { encodeFunctionData } from "viem";
 import { AavePoolAbi } from "../abi/AavePool";
 import { UsdcTokenAbi } from "../abi/UsdcToken";
+import { UsdtTokenAbi } from "../abi/UsdtToken";
+import { DaiTokenAbi } from "../abi/DaiToken";
+
 import { stakeTemplate } from "../templates";
 import { MetaTransactionData, OperationType } from "@safe-global/types-kit";
 import type { StakeParams, StakeResponse } from "../types";
@@ -28,17 +31,65 @@ const buildStakeDetails = async (
     template: stakeTemplate,
   });
 
+  console.log("context: ", context);
+
   const stakeDetails = (await generateObjectDeprecated({
     runtime,
     context,
     modelClass: ModelClass.SMALL,
   })) as StakeParams;
 
+  console.log("stakeDetails: ", stakeDetails);
+
   return stakeDetails;
 };
 
+const TOKEN_CONFIG = {
+  USDC: {
+    address: "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8",
+    abi: UsdcTokenAbi,
+  },
+  USDT: {
+    address: "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0",
+    abi: UsdtTokenAbi,
+  },
+  DAI: {
+    address: "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357",
+    abi: DaiTokenAbi,
+  },
+  // WETH: {
+  //   address: "0xC558DBdd856501FCd9aaF1E62eae57A9F0629a3c",
+  //   abi: WethTokenAbi,
+  // },
+} as const;
+
+type TokenSymbol = keyof typeof TOKEN_CONFIG;
+
 export class StakeAction {
   constructor(private safe: typeof Safe) {}
+
+  private getTokenConfig(token: string): { address: string; abi: any } {
+    // Check if it's already an address
+    if (token.startsWith("0x")) {
+      // For direct addresses, we'll need to determine which ABI to use
+      // This could be enhanced with on-chain detection of token type
+      return {
+        address: token,
+        abi: UsdcTokenAbi, // Default ABI - you might want to handle this differently
+      };
+    }
+
+    // Convert to uppercase to match our mapping
+    const upperToken = token.toUpperCase() as TokenSymbol;
+
+    // Get config from mapping
+    const tokenConfig = TOKEN_CONFIG[upperToken];
+    if (!tokenConfig) {
+      throw new Error(`Unsupported token: ${token}`);
+    }
+
+    return tokenConfig;
+  }
 
   async stake(params: StakeParams): Promise<StakeResponse> {
     // const aavePoolAddress = process.env.AAVE_POOL_ADDRESS;
@@ -46,6 +97,11 @@ export class StakeAction {
     const agentPrivateKey = process.env.AGENT_PRIVATE_KEY;
     const safeAddress = "0x6485A7046704ca7127B6D9Db3a3519F41C4976c0";
     const aavePoolAddress = "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951";
+
+    // Get the actual token address
+    const tokenConfig = this.getTokenConfig(params.token);
+
+    console.log("tokenConfig: ", tokenConfig);
 
     const preExistingSafe = await this.safe.init({
       provider: process.env.RPC_URL,
@@ -55,13 +111,13 @@ export class StakeAction {
 
     // Create approve transaction
     const callDataTokenApprove = encodeFunctionData({
-      abi: UsdcTokenAbi,
+      abi: tokenConfig.abi,
       functionName: "approve",
       args: [aavePoolAddress, BigInt(params.amount)],
     });
 
     const safeTokenApproveTx: MetaTransactionData = {
-      to: params.token as string, // Token address
+      to: tokenConfig.address, // Token address
       value: "0",
       data: callDataTokenApprove,
       operation: OperationType.Call,
@@ -71,7 +127,7 @@ export class StakeAction {
     const callDataAaveSupply = encodeFunctionData({
       abi: AavePoolAbi,
       functionName: "supply",
-      args: [params.token, BigInt(params.amount), safeAddress, 0],
+      args: [tokenConfig.address, BigInt(params.amount), safeAddress, 0],
     });
 
     const safeAaveSupplyTx: MetaTransactionData = {
@@ -88,6 +144,8 @@ export class StakeAction {
     });
 
     const txResponse = await preExistingSafe.executeTransaction(tx);
+
+    console.log("txResponse:", txResponse);
 
     return {
       hash: txResponse.hash,
@@ -142,13 +200,6 @@ export const stake: Action = {
       if (callback) {
         callback({
           text: `Successfully staked ${stakeParams.amount} ${stakeParams.token} to AAVE\nTransaction Hash: ${stakeResp.hash}`,
-          content: {
-            success: true,
-            hash: stakeResp.hash,
-            amount: stakeParams.amount,
-            token: stakeParams.token,
-            chain: stakeParams.chain,
-          },
         });
       }
 
@@ -158,7 +209,6 @@ export const stake: Action = {
       if (callback) {
         callback({
           text: `Error staking tokens: ${error.message}`,
-          content: { error: error.message },
         });
       }
       return false;

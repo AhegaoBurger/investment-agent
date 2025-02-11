@@ -245,4 +245,4 @@ export const DaiTokenAbi = [
     stateMutability: "nonpayable",
     type: "function",
   },
-];
+] as const;
