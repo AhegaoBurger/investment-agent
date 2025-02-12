@@ -1,31 +1,15 @@
 import {
-  type ActionExample,
   type IAgentRuntime,
   type Memory,
-  type Action,
-  composeContext,
-  generateObjectDeprecated,
-  type HandlerCallback,
-  ModelClass,
-  type State,
   type Provider,
+  type State,
 } from "@elizaos/core";
 
-import {
-  Address,
-  createPublicClient,
-  createWalletClient,
-  defineChain,
-  encodeFunctionData,
-  http,
-  PublicClient,
-} from "viem";
-import { sepolia } from "viem/chains";
+import { ethers } from "ethers";
 import { AavePoolAbi } from "../abi/AavePool";
 import { UsdcTokenAbi } from "../abi/UsdcToken";
 import { UsdtTokenAbi } from "../abi/UsdtToken";
 import { DaiTokenAbi } from "../abi/DaiToken";
-import { ethers } from "ethers";
 
 const AAVE_V3_POOL = "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951";
 
@@ -60,48 +44,37 @@ async function getAaveAPY(
       AavePoolAbi,
       provider
     );
-    const reserveData = await poolContract.getReserveData(tokenAddress);
-    // console.log("reserveData: ", reserveData);
 
-    // Convert BigNumber to string then to float, matching Python's approach
+    const reserveData = await poolContract.getReserveData(tokenAddress);
+
+    // Convert BigNumber to string then to float
     const liquidityRate = parseFloat(
       reserveData.currentLiquidityRate.toString()
     );
     const variableBorrowRate = parseFloat(
       reserveData.currentVariableBorrowRate.toString()
     );
-    const stableBorrowRate = parseFloat(
-      reserveData.currentStableBorrowRate.toString()
-    );
 
-    // Calculate APYs using the same formula as the Python code
+    // Calculate APYs using the simple formula (matches Python implementation)
     const depositAPY = (100.0 * liquidityRate) / RAY;
     const variableBorrowAPY = (100.0 * variableBorrowRate) / RAY;
-    const stableBorrowAPY = (100.0 * stableBorrowRate) / RAY;
 
-    console.log("symbool: ", tokenAddress);
-    console.log("depositAPY: ", depositAPY);
-    console.log("variableBorrowAPY: ", variableBorrowAPY);
-    console.log("stableBorrowAPY: ", stableBorrowAPY);
-
-    // const liquidityRate = reserveData.liquidityRate;
-    console.log("liquidityRate: ", liquidityRate);
-
-    const supplyAPY =
+    // Calculate compound APY (if needed)
+    const compoundSupplyAPY =
       (1 + Number(liquidityRate.toString()) / Number(RAY.toString())) **
         SECONDS_PER_YEAR -
       1;
 
-    // const variableBorrowRate = reserveData.variableBorrowRate;
+    // Log data for debugging
+    console.log("token address: ", tokenAddress);
+    console.log("depositAPY: ", depositAPY);
+    console.log("variableBorrowAPY: ", variableBorrowAPY);
+    console.log("liquidityRate: ", liquidityRate);
     console.log("variableBorrowRate: ", variableBorrowRate);
-    // const variableBorrowAPY =
-    //   (1 + Number(variableBorrowRate.toString()) / Number(RAY.toString())) **
-    //     SECONDS_PER_YEAR -
-    //   1;
 
     return {
-      supplyAPY: supplyAPY * 100,
-      variableBorrowAPY: variableBorrowAPY * 100,
+      supplyAPY: depositAPY, // Using simple APY calculation
+      variableBorrowAPY: variableBorrowAPY,
     };
   } catch (error) {
     console.error(`Error fetching Aave APY for token ${tokenAddress}:`, error);
@@ -125,10 +98,9 @@ async function getAllTokenAPYs(
       });
     } catch (error) {
       console.error(`Failed to fetch APY for ${tokenName}:`, error);
-      // Continue with other tokens even if one fails
       results.push({
         token: tokenName,
-        supplyAPY: -1, // Indicating error
+        supplyAPY: -1,
         variableBorrowAPY: -1,
         decimals: config.decimals,
       });
