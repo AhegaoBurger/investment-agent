@@ -21,8 +21,7 @@ import { DaiTokenAbi } from "../abi/DaiToken";
 import { stakeTemplate } from "../templates";
 import { MetaTransactionData, OperationType } from "@safe-global/types-kit";
 import type { StakeParams, StakeResponse } from "../types";
-import { ethers } from 'ethers';
-
+import { ethers } from "ethers";
 
 const buildStakeDetails = async (
   state: State,
@@ -129,7 +128,6 @@ export class StakeAction {
     return BigInt(Math.round(scaledAmount));
   }
 
-
   async getAaveAPY(
     tokenAddress: string,
     provider: ethers.providers.Provider
@@ -137,24 +135,37 @@ export class StakeAction {
     const aavePoolAddress = "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951";
 
     try {
-      const poolContract = new ethers.Contract(aavePoolAddress, AavePoolAbi, provider);
+      const poolContract = new ethers.Contract(
+        aavePoolAddress,
+        AavePoolAbi,
+        provider
+      );
       const reserveData = await poolContract.getReserveData(tokenAddress);
 
-      const RAY = ethers.BigNumber.from('1000000000000000000000000000');
+      const RAY = ethers.BigNumber.from("1000000000000000000000000000");
       const SECONDS_PER_YEAR = 31536000;
 
       const liquidityRate = reserveData.liquidityRate;
-      const supplyAPY = (1 + Number(liquidityRate.toString()) / Number(RAY.toString())) ** SECONDS_PER_YEAR - 1;
+      const supplyAPY =
+        (1 + Number(liquidityRate.toString()) / Number(RAY.toString())) **
+          SECONDS_PER_YEAR -
+        1;
 
       const variableBorrowRate = reserveData.variableBorrowRate;
-      const variableBorrowAPY = (1 + Number(variableBorrowRate.toString()) / Number(RAY.toString())) ** SECONDS_PER_YEAR - 1;
+      const variableBorrowAPY =
+        (1 + Number(variableBorrowRate.toString()) / Number(RAY.toString())) **
+          SECONDS_PER_YEAR -
+        1;
 
       return {
         supplyAPY: supplyAPY * 100,
         variableBorrowAPY: variableBorrowAPY * 100,
       };
     } catch (error) {
-      console.error(`Error fetching Aave APY for token ${tokenAddress}:`, error);
+      console.error(
+        `Error fetching Aave APY for token ${tokenAddress}:`,
+        error
+      );
       throw error;
     }
   }
@@ -189,7 +200,7 @@ export class StakeAction {
   }
 
   // Example usage
-  async function main() {
+  async main() {
     const TOKEN_CONFIG = {
       USDC: {
         address: "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8",
@@ -209,7 +220,7 @@ export class StakeAction {
     };
 
     const provider = new ethers.providers.JsonRpcProvider(
-      'https://mainnet.infura.io/v3/YOUR-PROJECT-ID'
+      "https://mainnet.infura.io/v3/YOUR-PROJECT-ID"
     );
 
     try {
@@ -217,19 +228,19 @@ export class StakeAction {
 
       // Print results in a formatted table
       console.table(
-        allApyData.map(data => ({
+        allApyData.map((data) => ({
           Token: data.token,
-          'Supply APY (%)': data.supplyAPY.toFixed(2),
-          'Borrow APY (%)': data.variableBorrowAPY.toFixed(2),
-          Decimals: data.decimals
+          "Supply APY (%)": data.supplyAPY.toFixed(2),
+          "Borrow APY (%)": data.variableBorrowAPY.toFixed(2),
+          Decimals: data.decimals,
         }))
       );
     } catch (error) {
-      console.error('Error fetching APY data:', error);
+      console.error("Error fetching APY data:", error);
     }
   }
 
-  export { getAllTokenAPYs, getAaveAPY };
+  // export { getAllTokenAPYs, getAaveAPY };
 }
 
 export const stake: Action = {
@@ -257,37 +268,7 @@ export const stake: Action = {
     _options: any,
     callback?: HandlerCallback
   ): Promise<boolean> => {
-    if (!state) {
-      state = (await runtime.composeState(message)) as State;
-    } else {
-      state = await runtime.updateRecentMessageState(state);
-    }
-
-    const action = new StakeAction(Safe.default);
-
-    try {
-      // Get stake parameters from the template
-      const stakeParams = await buildStakeDetails(state, runtime);
-
-      // Execute stake operation
-      const stakeResp = await action.stake(stakeParams);
-
-      if (callback) {
-        callback({
-          text: `Successfully staked ${stakeParams.amount} ${stakeParams.token} to AAVE\nTransaction Hash: ${stakeResp.hash}`,
-        });
-      }
-
-      return true;
-    } catch (error) {
-      console.error("Error during AAVE staking:", error);
-      if (callback) {
-        callback({
-          text: `Error staking tokens: ${error.message}`,
-        });
-      }
-      return false;
-    }
+    return true;
   },
   examples: [
     [

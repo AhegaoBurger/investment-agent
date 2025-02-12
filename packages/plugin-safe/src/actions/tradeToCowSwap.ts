@@ -49,7 +49,7 @@ const buildSwapParams = async (
     template: tradeToCowSwapTemplate,
   });
 
-  console.log("context: ", context);
+  console.log("context composed ");
 
   const stakeDetails = (await generateObjectDeprecated({
     runtime,
@@ -57,7 +57,7 @@ const buildSwapParams = async (
     modelClass: ModelClass.SMALL,
   })) as CowSwapTradeParams;
 
-  console.log("stakeDetails: ", stakeDetails);
+  // console.log("stakeDetails: ", stakeDetails);
 
   return stakeDetails;
 };
@@ -85,121 +85,66 @@ const TOKEN_CONFIG = {
 
 type TokenSymbol = keyof typeof TOKEN_CONFIG;
 
-// Helper functions
-// function extractValue(response: any): string {
-//   if (
-//     typeof response === "object" &&
-//     response !== null &&
-//     "result" in response
-//   ) {
-//     return response.result.toString();
-//   }
-//   return response.toString();
-// }
+export class CowSwapAction {
+  constructor(private safe: typeof Safe) {}
 
-// function formatTokenAmount(amount: string | bigint, decimals: number): string {
-//   const amountStr = amount.toString();
-//   const value = Number(amountStr) / Math.pow(10, decimals);
-//   return value.toFixed(decimals > 5 ? 5 : decimals);
-// }
+  private getTokenConfig(token: string): {
+    address: string;
+    abi: any;
+    decimals: number;
+  } {
+    // Check if it's already an address
+    if (token.startsWith("0x")) {
+      return {
+        address: token,
+        abi: UsdcTokenAbi,
+        decimals: 6, // Default decimals
+      };
+    }
 
-export const tradeToCowSwap: Action = {
-  name: "TRADE_TO_COWSWAP",
-  similes: [
-    "SWAP_ON_COWSWAP",
-    "EXCHANGE_VIA_COWSWAP",
-    "COWSWAP_TRADE",
-    "DEX_SWAP_COWSWAP",
-    "TRADE_TOKENS_COWSWAP",
-    "COWPROTOCOL_SWAP",
-  ],
-  validate: async (_runtime: IAgentRuntime, _message: Memory) => {
-    return true;
-  },
-  description:
-    "Executes a token swap through CowSwap (CoW Protocol) with MEV protection and optimal pricing",
-  handler: async (
-    runtime: IAgentRuntime,
-    message: Memory,
-    state: State,
-    _options: any,
-    callback?: HandlerCallback
-  ): Promise<boolean> => {
-    console.log("process.env.RPC_URL", process.env.RPC_URL);
+    // Convert to uppercase to match our mapping
+    const upperToken = token.toUpperCase() as TokenSymbol;
 
-    // Define addresses for the safe, AAVE pool, and tokens (all on Sepolia)
+    // Get config from mapping
+    const tokenConfig = TOKEN_CONFIG[upperToken];
+    if (!tokenConfig) {
+      throw new Error(`Unsupported token: ${token}`);
+    }
+
+    return tokenConfig;
+  }
+
+  private formatAmount(amount: string, decimals: number): bigint {
+    // Remove any commas from the amount string
+    const cleanAmount = amount.replace(/,/g, "");
+
+    // Convert to number and multiply by 10^decimals
+    const parsedAmount = parseFloat(cleanAmount);
+    const multiplier = Math.pow(10, decimals);
+    const scaledAmount = parsedAmount * multiplier;
+
+    // Convert to bigint, handling any floating point precision issues
+    return BigInt(Math.round(scaledAmount));
+  }
+
+  async swap(params: CowSwapTradeParams): Promise<any> {
     const safeAddress = "0x6485A7046704ca7127B6D9Db3a3519F41C4976c0";
-    const USDC_SEPOLIA_ADDRESS = "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8";
-    const USDT_SEPOLIA_ADDRESS = "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0";
-    const DAI_SEPOLIA_ADDRESS = "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357";
-    const AUSDC_SEPOLIA_ADDRESS = "0x16dA4541aD1807f4443d92D26044C1147406EB80";
-    const AUSDT_SEPOLIA_ADDRESS = "0xAF0F6e8b0Dc5c913bbF4d14c22B4E78Dd14310B6";
-    const ADAI_SEPOLIA_ADDRESS = "0x29598b72eb5CeBd806C5dCD549490FdA35B13cD8";
 
-    const swapParams = await buildSwapParams(state, runtime);
+    // Get configurations for both tokens
+    const sellTokenConfig = this.getTokenConfig(params.tokenToSell);
+    const buyTokenConfig = this.getTokenConfig(params.tokenToBuy);
 
-    const tokenToSell = swapParams.tokenToSell;
-    const tokenToBuy = swapParams.tokenToBuy;
-    const INPUT_AMOUNT = swapParams.inputAmount;
+    // Format the input amount with proper decimals
+    const scaledAmount = this.formatAmount(
+      params.inputAmount,
+      sellTokenConfig.decimals
+    );
 
-    const publicClient = createPublicClient({
-      chain: sepolia,
-      transport: http(),
-    });
-
-    console.log("publicClient created");
-
-    const exSafe = Safe.default;
-
-    console.log("exSafe const made");
-
-    const preExistingSafe = await exSafe.init({
-      // provider: process.env.RPC_URL,
+    const preExistingSafe = await this.safe.init({
       provider: "https://ethereum-sepolia-rpc.publicnode.com/",
       signer: process.env.AGENT_PRIVATE_KEY,
       safeAddress: safeAddress,
     });
-
-    console.log("preExistingSafe ran");
-
-    // Helper function to get the wallet balance for a given token using its ERC20 interface
-    async function getWalletBalance(tokenAddress: string, abi: any) {
-      console.log("getWalletBalance");
-      return publicClient.readContract({
-        address: tokenAddress as Address,
-        abi: abi,
-        functionName: "balanceOf",
-        args: [safeAddress],
-      });
-    }
-
-    console.log("getWalletBalance ran");
-
-    // Retrieve wallet balances for DAI, USDC, and USDT
-    const walletBalanceDAI = (await getWalletBalance(
-      DAI_SEPOLIA_ADDRESS,
-      DaiTokenAbi
-    )) as string;
-    const walletBalanceUSDC = (await getWalletBalance(
-      USDC_SEPOLIA_ADDRESS,
-      UsdcTokenAbi
-    )) as string;
-    const walletBalanceUSDT = (await getWalletBalance(
-      USDT_SEPOLIA_ADDRESS,
-      UsdtTokenAbi
-    )) as string;
-    const walletBalanceADAI = (await getWalletBalance(
-      ADAI_SEPOLIA_ADDRESS,
-      DaiTokenAbi
-    )) as string;
-    const walletBalanceAUSDC = (await getWalletBalance(
-      AUSDC_SEPOLIA_ADDRESS,
-      UsdcTokenAbi
-    )) as string;
-    const walletBalanceAUSDT = (await getWalletBalance(
-      AUSDT_SEPOLIA_ADDRESS,
-      UsdtTokenAbi
-    )) as string;
 
     const traderParams = {
       chainId: SupportedChainId.SEPOLIA,
@@ -210,40 +155,42 @@ export const tradeToCowSwap: Action = {
       appCode: "awesome-app",
     };
 
+    console.log("traderParams done");
+
     const cowSdk = new TradingSdk(traderParams, { logs: false });
 
-    console.log("cowSdk initialized");
+    console.log("cowSdk done");
 
     const parameters: TradeParameters = {
-      kind: OrderKind.SELL,
-      sellToken: tokenToSell,
-      sellTokenDecimals: 18,
-      buyToken: tokenToBuy,
-      buyTokenDecimals: 18,
-      amount: INPUT_AMOUNT,
+      kind: OrderKind.BUY,
+      sellToken: sellTokenConfig.address,
+      sellTokenDecimals: sellTokenConfig.decimals,
+      buyToken: buyTokenConfig.address,
+      buyTokenDecimals: buyTokenConfig.decimals,
+      amount: scaledAmount.toString(),
+      // amount: params.inputAmount,
+      slippageBps: 100,
+      partiallyFillable: true,
     };
 
-    console.log("parameters:", parameters);
+    console.log("parameters: ", parameters);
 
     const advancedParameters: SwapAdvancedSettings = {
       quoteRequest: {
-        // Specify the signing scheme
         signingScheme: SigningScheme.PRESIGN,
       },
     };
 
-    console.log("advanced parameters passed");
-
     const orderId = await cowSdk.postSwapOrder(parameters, advancedParameters);
 
-    console.log("order posted");
-
-    console.log(`Order ID: [${orderId}]`);
+    console.log("orderId: ", orderId);
 
     const preSignTransaction = await cowSdk.getPreSignTransaction({
       orderId,
       account: safeAddress,
     });
+
+    console.log("preSignTransaction done");
 
     const safePreSignTx: MetaTransactionData = {
       to: preSignTransaction.to,
@@ -257,72 +204,68 @@ export const tradeToCowSwap: Action = {
       onlyCalls: true,
     });
 
-    // You might need to collect more signatures here
-
     const txResponse = await preExistingSafe.executeTransaction(safeTx);
-    console.log(`Sent tx hash: [${txResponse.hash}]`);
-    console.log("Waiting for the tx to be mined");
-    await publicClient.waitForTransactionReceipt({
-      hash: txResponse.hash as `0x${string}`,
-    });
 
-    // Additional logic to aggregate or further process the retrieved balances could be added here.
+    console.log("txResponse: ", txResponse);
 
-    function formatTokenAmount(
-      amount: string | bigint,
-      decimals: number
-    ): string {
-      const amountStr = amount.toString();
-      const value = Number(amountStr) / Math.pow(10, decimals);
-      return value.toFixed(decimals > 5 ? 5 : decimals);
+    return txResponse;
+  }
+}
+
+export const tradeToCowSwap: Action = {
+  name: "TRADE_TO_COWSWAP",
+  similes: [
+    "SWAP_ON_COWSWAP",
+    "EXCHANGE_VIA_COWSWAP",
+    "COWSWAP_TRADE",
+    "DEX_SWAP_COWSWAP",
+    "TRADE_TOKENS_COWSWAP",
+    "COWPROTOCOL_SWAP",
+  ],
+  suppressInitialMessage: true,
+  validate: async (_runtime: IAgentRuntime, _message: Memory) => {
+    return true;
+  },
+  description:
+    "Executes a token swap through CowSwap (CoW Protocol) with MEV protection and optimal pricing",
+  handler: async (
+    runtime: IAgentRuntime,
+    message: Memory,
+    state: State,
+    _options: any,
+    callback?: HandlerCallback
+  ): Promise<boolean> => {
+    if (!state) {
+      state = (await runtime.composeState(message)) as State;
+    } else {
+      state = await runtime.updateRecentMessageState(state);
     }
 
-    const DECIMALS = {
-      USDC: 6,
-      USDT: 6,
-      DAI: 18,
-    };
+    const action = new CowSwapAction(Safe.default);
 
     try {
-      const formattedText = `Here are your current positions:
+      // Get swap parameters from the template
+      const swapParams = await buildSwapParams(state, runtime);
 
-                Wallet Balances:
-                • DAI: ${formatTokenAmount(walletBalanceDAI, DECIMALS.DAI)} DAI
-                • USDC: ${formatTokenAmount(
-                  walletBalanceUSDC,
-                  DECIMALS.USDC
-                )} USDC
-                • USDT: ${formatTokenAmount(
-                  walletBalanceUSDT,
-                  DECIMALS.USDT
-                )} USDT
+      console.log("swapParams: ", swapParams);
 
-                AAVE Deposits (aTokens):
-                • aDAI: ${formatTokenAmount(
-                  walletBalanceADAI,
-                  DECIMALS.DAI
-                )} aDAI
-                • aUSDC: ${formatTokenAmount(
-                  walletBalanceAUSDC,
-                  DECIMALS.USDC
-                )} aUSDC
-                • aUSDT: ${formatTokenAmount(
-                  walletBalanceAUSDT,
-                  DECIMALS.USDT
-                )} aUSDT`;
+      // Execute swap operation
+      const swapResp = await action.swap(swapParams);
+
+      console.log("swapResp: ", swapResp);
 
       if (callback) {
         callback({
-          text: formattedText,
+          text: `Successfully swapped ${swapParams.inputAmount} ${swapParams.tokenToSell} to ${swapParams.tokenToBuy}\nTransaction Hash: ${swapResp.hash}`,
         });
       }
 
       return true;
     } catch (error) {
-      console.error("Error retrieving balances:", error);
+      console.error("Error during CowSwap trade:", error);
       if (callback) {
         callback({
-          text: `Error retrieving balances: ${error.message}`,
+          text: `Error executing swap: ${error.message}`,
         });
       }
       return false;
