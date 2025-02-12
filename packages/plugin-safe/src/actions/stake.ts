@@ -48,14 +48,17 @@ const TOKEN_CONFIG = {
   USDC: {
     address: "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8",
     abi: UsdcTokenAbi,
+    decimals: 6,
   },
   USDT: {
     address: "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0",
     abi: UsdtTokenAbi,
+    decimals: 6,
   },
   DAI: {
     address: "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357",
     abi: DaiTokenAbi,
+    decimals: 18,
   },
   // WETH: {
   //   address: "0xC558DBdd856501FCd9aaF1E62eae57A9F0629a3c",
@@ -68,14 +71,17 @@ type TokenSymbol = keyof typeof TOKEN_CONFIG;
 export class StakeAction {
   constructor(private safe: typeof Safe) {}
 
-  private getTokenConfig(token: string): { address: string; abi: any } {
+  private getTokenConfig(token: string): {
+    address: string;
+    abi: any;
+    decimals: number;
+  } {
     // Check if it's already an address
     if (token.startsWith("0x")) {
-      // For direct addresses, we'll need to determine which ABI to use
-      // This could be enhanced with on-chain detection of token type
       return {
         address: token,
-        abi: UsdcTokenAbi, // Default ABI - you might want to handle this differently
+        abi: UsdcTokenAbi,
+        decimals: 6, // Default decimals - you might want to handle this differently
       };
     }
 
@@ -91,6 +97,19 @@ export class StakeAction {
     return tokenConfig;
   }
 
+  private formatAmount(amount: string, decimals: number): bigint {
+    // Remove any commas from the amount string
+    const cleanAmount = amount.replace(/,/g, "");
+
+    // Convert to number and multiply by 10^decimals
+    const parsedAmount = parseFloat(cleanAmount);
+    const multiplier = Math.pow(10, decimals);
+    const scaledAmount = parsedAmount * multiplier;
+
+    // Convert to bigint, handling any floating point precision issues
+    return BigInt(Math.round(scaledAmount));
+  }
+
   async stake(params: StakeParams): Promise<StakeResponse> {
     // const aavePoolAddress = process.env.AAVE_POOL_ADDRESS;
 
@@ -101,7 +120,12 @@ export class StakeAction {
     // Get the actual token address
     const tokenConfig = this.getTokenConfig(params.token);
 
-    console.log("tokenConfig: ", tokenConfig);
+    // Format the amount with proper decimals
+    const scaledAmount = this.formatAmount(params.amount, tokenConfig.decimals);
+
+    console.log("Token Config:", tokenConfig);
+    console.log("Original Amount:", params.amount);
+    console.log("Scaled Amount:", scaledAmount.toString());
 
     const preExistingSafe = await this.safe.init({
       provider: process.env.RPC_URL,
@@ -113,7 +137,7 @@ export class StakeAction {
     const callDataTokenApprove = encodeFunctionData({
       abi: tokenConfig.abi,
       functionName: "approve",
-      args: [aavePoolAddress, BigInt(params.amount)],
+      args: [aavePoolAddress, BigInt(scaledAmount)],
     });
 
     const safeTokenApproveTx: MetaTransactionData = {
@@ -127,7 +151,7 @@ export class StakeAction {
     const callDataAaveSupply = encodeFunctionData({
       abi: AavePoolAbi,
       functionName: "supply",
-      args: [tokenConfig.address, BigInt(params.amount), safeAddress, 0],
+      args: [tokenConfig.address, BigInt(scaledAmount), safeAddress, 0],
     });
 
     const safeAaveSupplyTx: MetaTransactionData = {
@@ -151,7 +175,7 @@ export class StakeAction {
       hash: txResponse.hash,
       from: safeAddress,
       to: aavePoolAddress,
-      value: BigInt(params.amount),
+      value: BigInt(scaledAmount),
       aTokenAddress: "", // You would get this from AAVE's data provider
       chainId: Number(params.chain),
     };
@@ -170,6 +194,7 @@ export const stake: Action = {
     "AAVE_SUPPLY",
     "AAVE_STAKE",
   ],
+  suppressInitialMessage: true,
   validate: async (_runtime: IAgentRuntime, _message: Memory) => {
     return true;
   },
