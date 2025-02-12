@@ -81,7 +81,7 @@ const balanceProvider: Provider = {
         });
         return reserveData;
       } catch (error) {
-        console.error("Error in getAaveDepositedBalance:", error);
+        // console.error("Error in getAaveDepositedBalance:", error);
         return "0"; // or return BigInt(0) depending on your needs
       }
     }
@@ -233,7 +233,7 @@ const balanceProvider: Provider = {
 
       return formattedText;
     } catch (error) {
-      console.error("Error retrieving balances:", error);
+      // console.error("Error retrieving balances:", error);
 
       return error;
     }

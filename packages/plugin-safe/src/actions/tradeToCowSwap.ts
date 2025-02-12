@@ -86,38 +86,38 @@ const TOKEN_CONFIG = {
 type TokenSymbol = keyof typeof TOKEN_CONFIG;
 
 // Helper functions
-function extractValue(response: any): string {
-  if (
-    typeof response === "object" &&
-    response !== null &&
-    "result" in response
-  ) {
-    return response.result.toString();
-  }
-  return response.toString();
-}
+// function extractValue(response: any): string {
+//   if (
+//     typeof response === "object" &&
+//     response !== null &&
+//     "result" in response
+//   ) {
+//     return response.result.toString();
+//   }
+//   return response.toString();
+// }
 
-function formatTokenAmount(amount: string | bigint, decimals: number): string {
-  const amountStr = amount.toString();
-  const value = Number(amountStr) / Math.pow(10, decimals);
-  return value.toFixed(decimals > 5 ? 5 : decimals);
-}
+// function formatTokenAmount(amount: string | bigint, decimals: number): string {
+//   const amountStr = amount.toString();
+//   const value = Number(amountStr) / Math.pow(10, decimals);
+//   return value.toFixed(decimals > 5 ? 5 : decimals);
+// }
 
-export const checkPositions: Action = {
-  name: "CHECK_POSITIONS",
+export const tradeToCowSwap: Action = {
+  name: "TRADE_TO_COWSWAP",
   similes: [
-    "CHECK_BALANCES",
-    "VIEW_POSITIONS",
-    "INSPECT_POSITIONS",
-    "QUERY_POSITIONS",
-    "BALANCE_OVERVIEW",
-    "POSITIONS_CHECK",
+    "SWAP_ON_COWSWAP",
+    "EXCHANGE_VIA_COWSWAP",
+    "COWSWAP_TRADE",
+    "DEX_SWAP_COWSWAP",
+    "TRADE_TOKENS_COWSWAP",
+    "COWPROTOCOL_SWAP",
   ],
   validate: async (_runtime: IAgentRuntime, _message: Memory) => {
     return true;
   },
   description:
-    "Checks the current positions for DAI, USDC, and USDT by verifying both the wallet balances and the amounts deposited on AAVE",
+    "Executes a token swap through CowSwap (CoW Protocol) with MEV protection and optimal pricing",
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
@@ -128,7 +128,7 @@ export const checkPositions: Action = {
     console.log("process.env.RPC_URL", process.env.RPC_URL);
 
     // Define addresses for the safe, AAVE pool, and tokens (all on Sepolia)
-    const safeAddress = process.env.SAFE_SEPOLIA_ADD;
+    const safeAddress = "0x6485A7046704ca7127B6D9Db3a3519F41C4976c0";
     const USDC_SEPOLIA_ADDRESS = "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8";
     const USDT_SEPOLIA_ADDRESS = "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0";
     const DAI_SEPOLIA_ADDRESS = "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357";
@@ -147,19 +147,24 @@ export const checkPositions: Action = {
       transport: http(),
     });
 
-    console.log("publicClient", publicClient);
+    console.log("publicClient created");
 
     const exSafe = Safe.default;
 
+    console.log("exSafe const made");
+
     const preExistingSafe = await exSafe.init({
-      provider: "https://api-sepolia.etherscan.io/api",
+      // provider: process.env.RPC_URL,
+      provider: "https://ethereum-sepolia-rpc.publicnode.com/",
       signer: process.env.AGENT_PRIVATE_KEY,
       safeAddress: safeAddress,
     });
 
+    console.log("preExistingSafe ran");
+
     // Helper function to get the wallet balance for a given token using its ERC20 interface
     async function getWalletBalance(tokenAddress: string, abi: any) {
-      console.log("getWalletBalance", tokenAddress, abi);
+      console.log("getWalletBalance");
       return publicClient.readContract({
         address: tokenAddress as Address,
         abi: abi,
@@ -167,6 +172,8 @@ export const checkPositions: Action = {
         args: [safeAddress],
       });
     }
+
+    console.log("getWalletBalance ran");
 
     // Retrieve wallet balances for DAI, USDC, and USDT
     const walletBalanceDAI = (await getWalletBalance(
@@ -198,12 +205,14 @@ export const checkPositions: Action = {
       chainId: SupportedChainId.SEPOLIA,
       signer: new VoidSigner(
         safeAddress,
-        new JsonRpcProvider("https://api-sepolia.etherscan.io/api")
+        new JsonRpcProvider("https://ethereum-sepolia-rpc.publicnode.com/")
       ),
       appCode: "awesome-app",
     };
 
     const cowSdk = new TradingSdk(traderParams, { logs: false });
+
+    console.log("cowSdk initialized");
 
     const parameters: TradeParameters = {
       kind: OrderKind.SELL,
@@ -214,6 +223,8 @@ export const checkPositions: Action = {
       amount: INPUT_AMOUNT,
     };
 
+    console.log("parameters:", parameters);
+
     const advancedParameters: SwapAdvancedSettings = {
       quoteRequest: {
         // Specify the signing scheme
@@ -221,7 +232,11 @@ export const checkPositions: Action = {
       },
     };
 
+    console.log("advanced parameters passed");
+
     const orderId = await cowSdk.postSwapOrder(parameters, advancedParameters);
+
+    console.log("order posted");
 
     console.log(`Order ID: [${orderId}]`);
 
@@ -250,86 +265,6 @@ export const checkPositions: Action = {
     await publicClient.waitForTransactionReceipt({
       hash: txResponse.hash as `0x${string}`,
     });
-
-    // Additional logic to aggregate or further process the retrieved balances could be added here.
-
-    // async function getBalances(
-    //   publicClient: PublicClient,
-    //   safeAddress: string
-    // ) {
-    //   // Helper function to get wallet balance
-    //   async function getWalletBalance(tokenAddress: string, abi: any) {
-    //     return publicClient.readContract({
-    //       address: tokenAddress as Address,
-    //       abi: abi,
-    //       functionName: "balanceOf",
-    //       args: [safeAddress],
-    //     });
-    //   }
-
-    //   const balances: Record<
-    //     string,
-    //     { wallet: string; aaveDeposited?: string }
-    //   > = {};
-
-    //   // Fetch balances for each token
-    //   for (const [symbol, config] of Object.entries(TOKEN_CONFIG)) {
-    //     // Get regular token balance
-    //     const walletBalance = await getWalletBalance(
-    //       config.address,
-    //       config.abi
-    //     );
-
-    //     // Get aToken balance
-    //     const aTokenBalance = await getWalletBalance(
-    //       config.aTokenAddress,
-    //       config.abi
-    //     );
-
-    //     // Format balances
-    //     balances[symbol] = {
-    //       wallet: formatTokenAmount(walletBalance, config.decimals),
-    //       aaveDeposited: formatTokenAmount(aTokenBalance, config.decimals),
-    //     };
-
-    //     // Also add aToken balance entry
-    //     balances[`a${symbol}`] = {
-    //       wallet: formatTokenAmount(aTokenBalance, config.decimals),
-    //     };
-    //   }
-
-    //   return {
-    //     balances,
-    //     formattedText: formatBalanceText(balances),
-    //   };
-    // }
-
-    // function formatBalanceText(
-    //   balances: Record<string, { wallet: string; aaveDeposited?: string }>
-    // ) {
-    //   return `Here are your current positions:
-
-    //     Wallet Balances:
-    //     • DAI: ${balances.DAI.wallet} DAI
-    //     • USDC: ${balances.USDC.wallet} USDC
-    //     • USDT: ${balances.USDT.wallet} USDT
-
-    //     AAVE Deposits (aTokens):
-    //     • aDAI: ${balances.aDAI.wallet} aDAI
-    //     • aUSDC: ${balances.aUSDC.wallet} aUSDC
-    //     • aUSDT: ${balances.aUSDT.wallet} aUSDT
-
-    //     Withdrawable Amounts from AAVE:
-    //     • DAI: ${balances.DAI.aaveDeposited} DAI
-    //     • USDC: ${balances.USDC.aaveDeposited} USDC
-    //     • USDT: ${balances.USDT.aaveDeposited} USDT`;
-    // }
-
-    // // In your handler, use it like this:
-    // const { balances, formattedText } = await getBalances(
-    //   publicClient,
-    //   safeAddress
-    // );
 
     // Additional logic to aggregate or further process the retrieved balances could be added here.
 
@@ -397,15 +332,52 @@ export const checkPositions: Action = {
     [
       {
         user: "{{user1}}",
-        content: {
-          text: "Can you check my positions on AAVE for DAI, USDC, and USDT?",
-        },
+        content: { text: "I want to swap 100 USDC for DAI on CowSwap" },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "I'll check your positions on AAVE by verifying both your wallet balances and your deposits for DAI, USDC, and USDT.",
-          action: "CHECK_POSITIONS",
+          text: "I'll help you swap your USDC to DAI using CowSwap for the best possible price with MEV protection",
+          action: "TRADE_TO_COWSWAP",
+        },
+      },
+    ],
+    [
+      {
+        user: "{{user1}}",
+        content: { text: "Exchange my USDT to USDC using CowSwap" },
+      },
+      {
+        user: "{{agentName}}",
+        content: {
+          text: "I'll initiate a USDT to USDC swap on CowSwap to get you the most competitive rate",
+          action: "TRADE_TO_COWSWAP",
+        },
+      },
+    ],
+    [
+      {
+        user: "{{user1}}",
+        content: { text: "What's the best way to trade DAI for USDT?" },
+      },
+      {
+        user: "{{agentName}}",
+        content: {
+          text: "I can help you swap DAI for USDT using CowSwap, which offers MEV protection and optimal pricing",
+          action: "TRADE_TO_COWSWAP",
+        },
+      },
+    ],
+    [
+      {
+        user: "{{user1}}",
+        content: { text: "Can you help me trade stablecoins on CowSwap?" },
+      },
+      {
+        user: "{{agentName}}",
+        content: {
+          text: "I'll assist you in swapping your stablecoins through CowSwap for the best possible execution",
+          action: "TRADE_TO_COWSWAP",
         },
       },
     ],
@@ -413,59 +385,27 @@ export const checkPositions: Action = {
       {
         user: "{{user1}}",
         content: {
-          text: "What's my current DAI position on AAVE?",
+          text: "I need to convert 500 DAI to USDC with minimal slippage",
         },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "I'll retrieve your DAI balance in your wallet as well as the amount deposited on AAVE for a complete overview.",
-          action: "CHECK_POSITIONS",
+          text: "I'll set up a DAI to USDC swap on CowSwap, which ensures minimal slippage and protection from frontrunning",
+          action: "TRADE_TO_COWSWAP",
         },
       },
     ],
     [
       {
         user: "{{user1}}",
-        content: {
-          text: "Can you show me my USDC status on AAVE?",
-        },
+        content: { text: "How can I swap tokens safely with the best rate?" },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "I'll verify your USDC holdings, both in your wallet and those deposited on AAVE.",
-          action: "CHECK_POSITIONS",
-        },
-      },
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "I want to see my USDT holdings and deposits on AAVE.",
-        },
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: "I'll fetch your USDT balance from your wallet and check the deposited amount on AAVE for you.",
-          action: "CHECK_POSITIONS",
-        },
-      },
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "Provide an overview of my stablecoin positions on AAVE.",
-        },
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: "I'll check your positions for DAI, USDC, and USDT by comparing your wallet balances with your deposits on AAVE.",
-          action: "CHECK_POSITIONS",
+          text: "I'll help you execute your swap through CowSwap, which provides MEV protection and aggregates liquidity for the best rates",
+          action: "TRADE_TO_COWSWAP",
         },
       },
     ],

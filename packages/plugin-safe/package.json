@@ -25,7 +25,9 @@
     "@safe-global/types-kit": "^1.0.1",
     "@safe-global/api-kit": "^2.5.6",
     "@aave/contract-helpers": "^1.31.1",
-    "@aave/math-utils": "^1.31.1"
+    "@aave/math-utils": "^1.31.1",
+    "@cowprotocol/cow-sdk": "^5.10.0",
+    "ethers": "5.7.2"
   },
   "scripts": {
     "build": "tsup --format esm --dts",
