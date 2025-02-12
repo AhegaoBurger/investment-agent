@@ -11,6 +11,88 @@ import type {
 } from "viem";
 import * as viemChains from "viem/chains";
 
+// Supported order kinds for CowSwap
+export type CowSwapOrderKind = "SELL" | "BUY";
+
+// Basic token information
+export interface CowSwapToken {
+  address: Address;
+  symbol: string;
+  decimals: number;
+}
+
+// Parameters for CowSwap trade
+export interface CowSwapTradeParams {
+  tokenToSell: Address | string; // Can be either a token address or symbol
+  tokenToBuy: Address | string; // Can be either a token address or symbol
+  inputAmount: string;
+  orderKind?: CowSwapOrderKind;
+  receiver?: Address; // Optional: defaults to safe address
+  validTo?: number; // Optional: order validity in seconds
+  partiallyFillable?: boolean; // Optional: whether order can be partially filled
+}
+
+// CowSwap trade response
+export interface CowSwapTradeResponse {
+  orderId: string;
+  hash?: Hash;
+  from: Address;
+  sellToken: Address;
+  buyToken: Address;
+  sellAmount: bigint;
+  buyAmount?: bigint;
+  status: CowSwapOrderStatus;
+  creationTime: number;
+  executionTime?: number;
+}
+
+// CowSwap order status
+export type CowSwapOrderStatus =
+  | "PENDING"
+  | "EXECUTED"
+  | "CANCELLED"
+  | "EXPIRED"
+  | "FAILED";
+
+// CowSwap transaction types
+export interface CowSwapApprovalTransaction {
+  to: Address; // Token address
+  value: string;
+  data: `0x${string}`;
+  operation: number;
+}
+
+export interface CowSwapOrderTransaction {
+  to: Address; // CowSwap settlement contract
+  value: string;
+  data: `0x${string}`;
+  operation: number;
+}
+
+// CowSwap quote information
+export interface CowSwapQuote {
+  sellAmount: bigint;
+  buyAmount: bigint;
+  feeAmount: bigint;
+  validTo: number;
+  quote: {
+    price: string;
+    priceImpact: string;
+    estimatedExecutionPrice: string;
+  };
+}
+
+// Error types
+export interface CowSwapError extends Error {
+  code?: number;
+  data?: unknown;
+  orderId?: string;
+  transaction?: {
+    hash: Hash;
+    status: "failed" | "reverted";
+  };
+}
+
 // Supported tokens for AAVE staking
 export type AaveToken =
   | "USDC"

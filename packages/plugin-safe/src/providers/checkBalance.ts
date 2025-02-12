@@ -28,7 +28,7 @@ import { DaiTokenAbi } from "../abi/DaiToken";
 
 const balanceProvider: Provider = {
   get: async (runtime: IAgentRuntime, message: Memory, state?: State) => {
-    console.log("process.env.RPC_URL", process.env.RPC_URL);
+    // console.log("process.env.RPC_URL", process.env.RPC_URL);
 
     // Define addresses for the safe, AAVE pool, and tokens (all on Sepolia)
     const safeAddress = "0x6485A7046704ca7127B6D9Db3a3519F41C4976c0";
@@ -49,7 +49,7 @@ const balanceProvider: Provider = {
 
     // Helper function to get the wallet balance for a given token using its ERC20 interface
     async function getWalletBalance(tokenAddress: string, abi: any) {
-      console.log("getWalletBalance", tokenAddress);
+      // console.log("getWalletBalance", tokenAddress);
       return publicClient.readContract({
         address: tokenAddress as Address,
         abi: abi,
@@ -65,10 +65,10 @@ const balanceProvider: Provider = {
       tokenAddress: string,
       amount: number
     ) {
-      console.log("getAaveDepositedBalance", tokenAddress, "amount: ", amount);
+      // console.log("getAaveDepositedBalance", tokenAddress, "amount: ", amount);
 
       if (amount === 0) {
-        console.log("getAaveDepositedBalance amount is 0, returning 0");
+        // console.log("getAaveDepositedBalance amount is 0, returning 0");
         return "0"; // or return BigInt(0) depending on your needs
       }
 
@@ -87,30 +87,30 @@ const balanceProvider: Provider = {
     }
 
     // Retrieve wallet balances for DAI, USDC, and USDT
-    const walletBalanceDAI = await getWalletBalance(
+    const walletBalanceDAI = (await getWalletBalance(
       DAI_SEPOLIA_ADDRESS,
       DaiTokenAbi
-    );
-    const walletBalanceUSDC = await getWalletBalance(
+    )) as string;
+    const walletBalanceUSDC = (await getWalletBalance(
       USDC_SEPOLIA_ADDRESS,
       UsdcTokenAbi
-    );
-    const walletBalanceUSDT = await getWalletBalance(
+    )) as string;
+    const walletBalanceUSDT = (await getWalletBalance(
       USDT_SEPOLIA_ADDRESS,
       UsdtTokenAbi
-    );
-    const walletBalanceADAI = await getWalletBalance(
+    )) as string;
+    const walletBalanceADAI = (await getWalletBalance(
       ADAI_SEPOLIA_ADDRESS,
       DaiTokenAbi
-    );
-    const walletBalanceAUSDC = await getWalletBalance(
+    )) as string;
+    const walletBalanceAUSDC = (await getWalletBalance(
       AUSDC_SEPOLIA_ADDRESS,
       UsdcTokenAbi
-    );
-    const walletBalanceAUSDT = await getWalletBalance(
+    )) as string;
+    const walletBalanceAUSDT = (await getWalletBalance(
       AUSDT_SEPOLIA_ADDRESS,
       UsdtTokenAbi
-    );
+    )) as string;
 
     // Retrieve AAVE deposit balances for DAI, USDC, and USDT
     const depositBalanceDAI = await getAaveDepositedBalance(
@@ -126,12 +126,12 @@ const balanceProvider: Provider = {
       walletBalanceAUSDT
     );
 
-    console.log("DAI Wallet Balance:", walletBalanceDAI.toString());
-    console.log("DAI Deposited on AAVE:", depositBalanceDAI.toString());
-    console.log("USDC Wallet Balance:", walletBalanceUSDC.toString());
-    console.log("USDC Deposited on AAVE:", depositBalanceUSDC);
-    console.log("USDT Wallet Balance:", walletBalanceUSDT.toString());
-    console.log("USDT Deposited on AAVE:", depositBalanceUSDT.toString());
+    // console.log("DAI Wallet Balance:", walletBalanceDAI.toString());
+    // console.log("DAI Deposited on AAVE:", depositBalanceDAI.toString());
+    // console.log("USDC Wallet Balance:", walletBalanceUSDC.toString());
+    // console.log("USDC Deposited on AAVE:", depositBalanceUSDC);
+    // console.log("USDT Wallet Balance:", walletBalanceUSDT.toString());
+    // console.log("USDT Deposited on AAVE:", depositBalanceUSDT.toString());
 
     // Additional logic to aggregate or further process the retrieved balances could be added here.
     function extractValue(response: any): string {
