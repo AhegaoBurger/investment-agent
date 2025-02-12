@@ -17,6 +17,7 @@ import { AavePoolAbi } from "../abi/AavePool";
 import { UsdcTokenAbi } from "../abi/UsdcToken";
 import { UsdtTokenAbi } from "../abi/UsdtToken";
 import { DaiTokenAbi } from "../abi/DaiToken";
+import { WethTokenAbi } from "../abi/WethToken";
 
 import { stakeTemplate } from "../templates";
 import { MetaTransactionData, OperationType } from "@safe-global/types-kit";
@@ -60,10 +61,10 @@ const TOKEN_CONFIG = {
     abi: DaiTokenAbi,
     decimals: 18,
   },
-  // WETH: {
-  //   address: "0xC558DBdd856501FCd9aaF1E62eae57A9F0629a3c",
-  //   abi: WethTokenAbi,
-  // },
+  WETH: {
+    address: "0xC558DBdd856501FCd9aaF1E62eae57A9F0629a3c",
+    abi: WethTokenAbi,
+  },
 } as const;
 
 type TokenSymbol = keyof typeof TOKEN_CONFIG;
