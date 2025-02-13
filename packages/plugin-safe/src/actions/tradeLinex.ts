@@ -3,44 +3,41 @@ import {
   type IAgentRuntime,
   type Memory,
   type Action,
-  composeContext,
-  generateObjectDeprecated,
   type HandlerCallback,
-  ModelClass,
   type State,
 } from "@elizaos/core";
 
-import {
-  Address,
-  createPublicClient,
-  createWalletClient,
-  defineChain,
-  encodeFunctionData,
-  http,
-  PublicClient,
-  Hex,
-} from "viem";
+import { Address, createPublicClient, http, Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { linea } from "viem/chains";
 
-export const stakeToAnkrAndEigen: Action = {
-  name: "STAKE_TO_ANKR_AND_EIGEN",
+// ABI for the router that provides `getAmountOut`
+import { lynexAbi } from "../abi/LynexAbi";
+
+/**
+ * ACTION: ESTIMATE_MEMECOIN_PURCHASE
+ *
+ * This action estimates how many memecoins (FOXY, CROAK, LINDA, etc.)
+ * can be bought on Linea with a given amount of WETH. Because these
+ * tokens aren’t actually available on testnet and the user’s wallet
+ * is empty, no real trade is made; we only show an estimate.
+ */
+
+export const estimateMemecoinPurchase: Action = {
+  name: "ESTIMATE_MEMECOIN_PURCHASE",
   similes: [
-    "RESTAKE_ON_EIGENLAYER",
-    "ANKR_EIGEN_DEPOSIT",
-    "LIQUID_RESTAKING_EIGEN",
-    "EIGEN_ANKR_STAKE",
-    "DUAL_STAKE_EIGEN",
-    "EIGENLAYER_DEPOSIT",
-    "ANKR_TO_EIGEN_STAKE",
-    "COMPOUND_STAKE_EIGEN",
+    "CALCULATE_MEMECOIN_TRADE",
+    "ESTIMATE_MEMECOIN_SWAP",
+    "LINEA_MEMECOIN_QUOTE",
+    "SIMULATE_MEMECOIN_PURCHASE",
+    "MEMECOIN_ESTIMATION",
   ],
   validate: async (_runtime: IAgentRuntime, _message: Memory) => {
-    // You can add validation logic here if needed
+    // Any extra validation logic can go here
     return true;
   },
   description:
-    "Performs liquid restaking by depositing ETH into Ankr for aETH tokens, then restaking on EigenLayer for additional yield opportunities",
+    "Estimates how many memecoins can be purchased on Linea with a given amount of WETH, without executing the trade. Mentions user’s wallet is empty and warns it’s only an estimate.",
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
@@ -48,108 +45,84 @@ export const stakeToAnkrAndEigen: Action = {
     _options: any,
     callback?: HandlerCallback
   ): Promise<boolean> => {
-    // RPC for Holesky testnet
-    const agentPrivateKey = process.env.AGENT_PRIVATE_KEY?.startsWith("0x")
-      ? (process.env.AGENT_PRIVATE_KEY as Hex)
-      : (`0x${process.env.AGENT_PRIVATE_KEY}` as Hex);
-    console.log("agentPrivateKey: ", agentPrivateKey);
+    console.log("Starting memecoin purchase estimation on Linea...");
 
-    // Contract addresses
-    const lynexRouterAddress = "0x610D2f07b7EdC67565160F587F37636194C34E74";
-
-    // Clients
-    const publicClient = createPublicClient({
-      chain: linea,
-      transport: http(),
-    });
-    console.log("publicClient created");
-
-    const account = privateKeyToAccount(agentPrivateKey);
-    console.log("account created");
-
-    const walletClient = createWalletClient({
-      account,
-      chain: linea,
-      transport: http(),
-    });
-    console.log("walletClient created");
-
-    // -----------------------------------------------------------
-    // 1) DEPOSIT ETH INTO ANKR
-    // -----------------------------------------------------------
-    async function estimateTxOutput(
-      amountToDeposit: bigint,
-      tokenIn,
-      tokenOut
-    ) {
-      const data = await publicClient.readContract({
-        address: "0xFBA3912Ca04dd458c843e2EE08967fC04f3579c2",
-        abi: wagmiAbi,
-        functionName: "balanceOf",
-        args: ["0xa5cc3c03994DB5b0d9A5eEdD10CabaB0813678AC"],
-      });
-    }
-
-    // -----------------------------------------------------------
-    // 3) DEPOSIT aETH INTO EIGEN STRATEGY
-    // -----------------------------------------------------------
-    async function depositIntoStrategy(amountToDeposit: bigint) {
-      console.log(`Restaking ${amountToDeposit} ankrToken on EigenLayer...`);
-      const { request } = await publicClient.simulateContract({
-        account,
-        address: eigenLayerHoleskyStrategy,
-        abi: eigenStrategy,
-        functionName: "depositIntoStrategy",
-        value: 0,
-        args: [ankrtokenstrategy, ankrTokenAddress, amountToDeposit],
-      });
-      await walletClient.writeContract(request);
-      console.log("✓ Successfully restaked on EigenLayer");
-    }
-
-    // --------------------------------
-    // EXAMPLE MAIN LOGIC
-    // --------------------------------
     try {
-      // For demonstration, assume user wants to stake 1 ETH into Ankr
-      // Then restake all aETH into EigenLayer
-      const ONE_ETH_IN_WEI = BigInt(10000000000000000);
+      // 1) Prepare a public client (testnet or mainnet if needed)
+      const publicClient = createPublicClient({
+        chain: linea,
+        transport: http(),
+      });
 
-      // 1) Stake ETH into Ankr
-      await depositEthAnkr(ONE_ETH_IN_WEI);
+      // 2) For demonstration, we read an environment variable for a private key
+      //    (not strictly needed here since we are only estimating).
+      //    We'll do it anyway in case you want to adapt it to sign something in the future.
+      const agentPrivateKey = process.env.AGENT_PRIVATE_KEY?.startsWith("0x")
+        ? (process.env.AGENT_PRIVATE_KEY as Hex)
+        : (`0x${process.env.AGENT_PRIVATE_KEY}` as Hex);
 
-      // 2) If required, approve the new aETH tokens for the Eigen strategy
-      // await approveAnkrTokenOnEigen();
+      if (!agentPrivateKey) {
+        console.log("No AGENT_PRIVATE_KEY found. Using read-only approach.");
+      }
 
-      // 3) Suppose user wants to deposit 100% of the newly minted aETH into Eigen
-      // The actual minted amount depends on Ankr’s exchange rate
-      // For a placeholder, let's assume user minted 1 aETH = 1 ankrToken
-      // In reality, you would query the new balance, then deposit that exact amount:
-      await depositIntoStrategy(ONE_ETH_IN_WEI);
+      // 3) Reference addresses
+      const lynexRouterAddress = "0x610D2f07b7EdC67565160F587F37636194C34E74";
+      const wETHLineaAddress = "0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f";
 
-      // 4) (Optional) delegate
-      // await delegate(ONE_ETH_IN_WEI);
+      // Example memecoins (not actually available on testnet):
+      const FOXY = "0x5FBDF89403270a1846F5ae7D113A989F850d1566";
+      const CROAK = "0xaCb54d07cA167934F57F829BeE2cC665e1A5ebEF";
+      const LINDA = "0x82cC61354d78b846016b559e3cCD766fa7E793D5";
 
-      // Return success info
-      const result = {
-        text: "Staking to Ankr + EigenLayer complete",
-        content: {
-          ankrStake: "1 ETH staked -> aETH minted",
-          eigenRestake: "1 aETH restaked on EigenLayer",
-          delegation: "Not delegated (example commented out)",
-        },
-      };
+      // 4) Function to get a rough quote from the router
+      async function estimateTxOutput(
+        amountIn: bigint,
+        tokenIn: Address,
+        tokenOut: Address
+      ): Promise<bigint> {
+        console.log(
+          `Estimating trade from tokenIn=${tokenIn} to tokenOut=${tokenOut} for amountIn=${amountIn}...`
+        );
+        const amountOut = await publicClient.readContract({
+          address: lynexRouterAddress as Address,
+          abi: lynexAbi,
+          functionName: "getAmountOut",
+          args: [amountIn, tokenIn, tokenOut],
+        });
+        return amountOut as bigint;
+      }
+
+      // 5) Example usage: Suppose user wants to see how many CROAK they can get for 0.1 WETH
+      const amountWethToSpend = BigInt(0.1e18);
+      const memecoinAddress = CROAK; // or FOXY, LINDA, etc.
+
+      const estimatedAmountOut = await estimateTxOutput(
+        amountWethToSpend,
+        wETHLineaAddress as Address,
+        memecoinAddress as Address
+      );
+
+      console.log(`Estimated memecoin out: ${estimatedAmountOut.toString()}`);
+
+      // 6) Construct the result message. Emphasize that the user’s wallet is empty, so no real trade can occur.
+      const resultText = `You could theoretically get ~${estimatedAmountOut.toString()} memecoins (CROAK) for 0.1 WETH on Linea. However, your wallet is empty on testnet, and these tokens are not actually tradable here. This is only an estimation.`;
 
       if (callback) {
-        callback(result);
+        callback({
+          text: resultText,
+          content: {
+            estimatedAmount: estimatedAmountOut.toString(),
+            note: "No actual trade executed. User wallet is empty, tokens not on testnet.",
+          },
+        });
       }
 
       return true;
     } catch (error) {
-      console.error("Error in stakeToAnkrAndEigen handler:", error);
+      console.error("Error estimating memecoin purchase:", error);
       if (callback) {
         callback({
-          text: `Error while staking: ${error.message}`,
+          text: `Error while estimating memecoin purchase: ${error.message}`,
           content: { error: error.message },
         });
       }
@@ -161,14 +134,14 @@ export const stakeToAnkrAndEigen: Action = {
       {
         user: "{{user1}}",
         content: {
-          text: "Please stake 1 ETH into Ankr, then restake it on EigenLayer.",
+          text: "How many CROAK can I buy with 0.1 WETH on Linea?",
         },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "Sure! I'll deposit your ETH into Ankr to mint aETH, then restake that aETH on EigenLayer for extra yield.",
-          action: "STAKE_TO_ANKR_AND_EIGEN",
+          text: "I'll estimate how many CROAK you'd receive for 0.1 WETH, but your wallet is empty, so this is only a simulation.",
+          action: "ESTIMATE_MEMECOIN_PURCHASE",
         },
       },
     ],
@@ -176,14 +149,14 @@ export const stakeToAnkrAndEigen: Action = {
       {
         user: "{{user1}}",
         content: {
-          text: "I'd like to deposit some ETH into Ankr and then restake on EigenLayer. Can you do that?",
+          text: "Can you show me how many FOXY I'd get if I swapped 2 WETH on Linea testnet?",
         },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "Certainly. I'll handle the deposit to Ankr and reinvest those aETH tokens on EigenLayer for added returns.",
-          action: "STAKE_TO_ANKR_AND_EIGEN",
+          text: "I can provide a rough estimate using the router's getAmountOut function. Keep in mind that there's no actual trade on testnet.",
+          action: "ESTIMATE_MEMECOIN_PURCHASE",
         },
       },
     ],
@@ -191,14 +164,14 @@ export const stakeToAnkrAndEigen: Action = {
       {
         user: "{{user1}}",
         content: {
-          text: "Help me stake my ETH to get aETH and delegate it on EigenLayer to nethermind.",
+          text: "I want to see how many LINDA tokens I'd get with 1.5 WETH on the testnet.",
         },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "I'll stake your ETH on Ankr for aETH, restake on EigenLayer, and can optionally handle delegation if you like.",
-          action: "STAKE_TO_ANKR_AND_EIGEN",
+          text: "I'll calculate an approximate output using the router, but note that your wallet is empty and the trade cannot be executed on Linea testnet.",
+          action: "ESTIMATE_MEMECOIN_PURCHASE",
         },
       },
     ],

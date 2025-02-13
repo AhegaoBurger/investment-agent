@@ -124,7 +124,7 @@ export class StakeAction {
     // Format the amount with proper decimals
     const scaledAmount = this.formatAmount(params.amount, tokenConfig.decimals);
 
-    console.log("Token Config:", tokenConfig);
+    // console.log("Token Config:", tokenConfig);
     console.log("Original Amount:", params.amount);
     console.log("Scaled Amount:", scaledAmount.toString());
 
