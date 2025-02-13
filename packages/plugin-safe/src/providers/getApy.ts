@@ -66,11 +66,11 @@ async function getAaveAPY(
       1;
 
     // Log data for debugging
-    console.log("token address: ", tokenAddress);
-    console.log("depositAPY: ", depositAPY);
-    console.log("variableBorrowAPY: ", variableBorrowAPY);
-    console.log("liquidityRate: ", liquidityRate);
-    console.log("variableBorrowRate: ", variableBorrowRate);
+    // console.log("token address: ", tokenAddress);
+    // console.log("depositAPY: ", depositAPY);
+    // console.log("variableBorrowAPY: ", variableBorrowAPY);
+    // console.log("liquidityRate: ", liquidityRate);
+    // console.log("variableBorrowRate: ", variableBorrowRate);
 
     return {
       supplyAPY: depositAPY, // Using simple APY calculation
@@ -137,6 +137,31 @@ const apyProvider: Provider = {
     try {
       const allApyData = await getAllTokenAPYs(TOKEN_CONFIG, provider);
 
+      // Format the APY data into a readable text
+      const formattedText = `Here are the current APY rates:
+
+                  Supply APY Rates:
+                  • DAI: ${allApyData
+                    .find((data) => data.token === "DAI")
+                    ?.supplyAPY.toFixed(2)}%
+                  • USDC: ${allApyData
+                    .find((data) => data.token === "USDC")
+                    ?.supplyAPY.toFixed(2)}%
+                  • USDT: ${allApyData
+                    .find((data) => data.token === "USDT")
+                    ?.supplyAPY.toFixed(2)}%
+
+                  Variable Borrow APY Rates:
+                  • DAI: ${allApyData
+                    .find((data) => data.token === "DAI")
+                    ?.variableBorrowAPY.toFixed(2)}%
+                  • USDC: ${allApyData
+                    .find((data) => data.token === "USDC")
+                    ?.variableBorrowAPY.toFixed(2)}%
+                  • USDT: ${allApyData
+                    .find((data) => data.token === "USDT")
+                    ?.variableBorrowAPY.toFixed(2)}%`;
+
       // Print results in a formatted table
       console.table(
         allApyData.map((data) => ({
@@ -147,7 +172,7 @@ const apyProvider: Provider = {
         }))
       );
 
-      return allApyData;
+      return formattedText;
     } catch (error) {
       console.error("Error fetching APY data:", error);
       return error;
