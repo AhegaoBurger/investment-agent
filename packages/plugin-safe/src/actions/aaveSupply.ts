@@ -183,24 +183,24 @@ export class StakeAction {
   }
 }
 
-export const stake: Action = {
-  name: "STAKE",
+export const supplyToAave: Action = {
+  name: "SUPPLY_TO_AAVE",
   similes: [
-    "SUPPLY_TO_AAVE",
-    "DEPOSIT_TO_AAVE",
     "LEND_ON_AAVE",
-    "STAKE_ON_AAVE",
     "PROVIDE_LIQUIDITY_AAVE",
-    "AAVE_DEPOSIT",
-    "AAVE_SUPPLY",
-    "AAVE_STAKE",
+    "DEPOSIT_TO_AAVE_POOL",
+    "AAVE_LENDING",
+    "SUPPLY_AAVE_POOL",
+    "AAVE_LIQUIDITY_PROVISION",
+    "AAVE_MARKET_SUPPLY",
+    "LEND_ASSETS_AAVE",
   ],
   suppressInitialMessage: true,
   validate: async (_runtime: IAgentRuntime, _message: Memory) => {
     return true;
   },
   description:
-    "Supplies/stakes tokens to the AAVE lending protocol to earn yield",
+    "Supplies assets to AAVE's lending pool to earn variable yield through lending markets",
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
