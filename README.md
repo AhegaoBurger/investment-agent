@@ -16,19 +16,6 @@ A DeFi risk management AI assistant that helps users navigate multi-chain crypto
 - [Node.js 23+](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
 - [pnpm](https://pnpm.io/installation)
 
-
-## Environment Setup
-
-Create a `.env` file in the root directory with the following variables:
-
-```env
-AGENT_PRIVATE_KEY=your_private_key_here
-RPC_URL=your_rpc_url_here
-SAFE_ADDRESS=your_safe_address_here
-```
-
-Make sure to replace the placeholder values with your actual credentials.
-
 ## Installation
 
 1. Clone the repository:
@@ -37,24 +24,34 @@ git clone https://github.com/AhegaoBurger/investment-agent
 cd investment-agent
 ```
 
-2. Install dependencies:
+2. Create a `.env` file in the root directory with the following variables:
+```env
+AGENT_PRIVATE_KEY=your_private_key_here
+RPC_URL=your_rpc_url_here
+SAFE_ADDRESS=your_safe_address_here
+```
+Make sure to replace the placeholder values with your actual credentials.
+
+3. Install dependencies:
 ```bash
 pnpm install --no-frozen-lockfile
 ```
 
-3. Build the project:
+4. Build the project:
 ```bash
 pnpm run build
 ```
 
 ## Usage
 
-1. Start the client:
+Open two terminal tabs/windows:
+
+In the first terminal:
 ```bash
 pnpm start:client
 ```
 
-2. Run the CryptoRiskManager character:
+In the second terminal:
 ```bash
 pnpm start --character="characters/cryptoriskmanager.character.json"
 ```
