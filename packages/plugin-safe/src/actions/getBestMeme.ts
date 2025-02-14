@@ -14,8 +14,8 @@ import { linea } from "viem/chains";
 //
 // This action fetches updated DexScreener data for three memecoins (FOXY, CROAK, LINDA)
 // on Linea, computes a short-term momentum-based "score" for each coin, and returns
-// whichever coin currently looks best to buy according to that simple formula. No trades
-// are executed.
+// whichever coin currently looks best to buy according to that simple formula.
+// No trades are executed here.
 
 export const evaluateBestMemecoin: Action = {
   name: "EVALUATE_BEST_MEMECOIN",
@@ -75,10 +75,6 @@ export const evaluateBestMemecoin: Action = {
         const pc24h = coin.priceChange?.h24 || 0;
 
         // Weighted volume factor
-        //   5m has weight 2.0
-        //   1h has weight 1.5
-        //   6h has weight 1.0
-        //   24h has weight 0.5
         const volFactor =
           volume5m * 2.0 +
           volume1h * 1.5 +
@@ -86,10 +82,6 @@ export const evaluateBestMemecoin: Action = {
           volume24h * 0.5;
 
         // Weighted price factor
-        //   5m has weight 3.0
-        //   1h has weight 2.0
-        //   6h has weight 1.5
-        //   24h has weight 1.0
         const priceFactor =
           pc5m * 3.0 + pc1h * 2.0 + pc6h * 1.5 + pc24h * 1.0;
 
@@ -106,10 +98,10 @@ export const evaluateBestMemecoin: Action = {
 
         console.log(
           `Token: ${coin.baseToken.symbol} | Score: ${score.toFixed(2)} | ` +
-            `Volumes: 5m=${coin.volume?.m5}, 1h=${coin.volume?.h1}, ` +
-            `6h=${coin.volume?.h6}, 24h=${coin.volume?.h24} | ` +
-            `PriceChg: 5m=${coin.priceChange?.m5}, 1h=${coin.priceChange?.h1}, ` +
-            `6h=${coin.priceChange?.h6}, 24h=${coin.priceChange?.h24}`
+          `Volumes: 5m=${coin.volume?.m5}, 1h=${coin.volume?.h1}, ` +
+          `6h=${coin.volume?.h6}, 24h=${coin.volume?.h24} | ` +
+          `PriceChg: 5m=${coin.priceChange?.m5}, 1h=${coin.priceChange?.h1}, ` +
+          `6h=${coin.priceChange?.h6}, 24h=${coin.priceChange?.h24}`
         );
 
         if (score > bestScore) {
@@ -156,13 +148,13 @@ export const evaluateBestMemecoin: Action = {
       {
         user: "{{user1}}",
         content: {
-          text: "Which memecoin on Linea looks like the best buy right now?",
+          text: "Which memecoin on Linea has the strongest short-term momentum?",
         },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "Let me fetch DexScreener data and compare short-term price changes and volumes for FOXY, CROAK, and LINDA.",
+          text: "Let me calculate momentum for FOXY, CROAK, and LINDA by comparing recent volumes and price changes.",
           action: "EVALUATE_BEST_MEMECOIN",
         },
       },
@@ -171,13 +163,28 @@ export const evaluateBestMemecoin: Action = {
       {
         user: "{{user1}}",
         content: {
-          text: "Check the momentum for FOXY, CROAK, and LINDA. Which one is trending most strongly?",
+          text: "I need to know which memecoin is hot right now based on volume and short-term price performance.",
         },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "I'll pull fresh data from the DexScreener API, evaluate each coin’s short-term momentum, and let you know which is best.",
+          text: "I'll fetch DexScreener data and calculate momentum for FOXY, CROAK, and LINDA to see which is trending best.",
+          action: "EVALUATE_BEST_MEMECOIN",
+        },
+      },
+    ],
+    [
+      {
+        user: "{{user1}}",
+        content: {
+          text: "Could you check the momentum scores for FOXY, CROAK, and LINDA on Linea and tell me which is the top pick?",
+        },
+      },
+      {
+        user: "{{agentName}}",
+        content: {
+          text: "Absolutely. Calculating momentum for each coin now, factoring in volume and short-term price changes.",
           action: "EVALUATE_BEST_MEMECOIN",
         },
       },

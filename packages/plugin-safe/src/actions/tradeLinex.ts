@@ -18,9 +18,11 @@ import { lynexAbi } from "../abi/LynexAbi";
  * ACTION: ESTIMATE_MEMECOIN_PURCHASE
  *
  * This action estimates how many memecoins (FOXY, CROAK, LINDA, etc.)
- * can be bought on Linea with a given amount of WETH. Because these
- * tokens aren’t actually available on testnet and the user’s wallet
- * is empty, no real trade is made; we only show an estimate.
+ * can be bought on Linea **using ETH/WETH only**. No other tokens (USDC, DAI, etc.)
+ * are accepted here. The function reads the router’s getAmountOut to provide
+ * an approximate quote. Because these memecoins aren’t actually available on
+ * Linea testnet and the user has an empty wallet, no real trade is made.
+ * This is purely informational.
  */
 
 export const estimateMemecoinPurchase: Action = {
@@ -37,7 +39,7 @@ export const estimateMemecoinPurchase: Action = {
     return true;
   },
   description:
-    "Estimates how many memecoins can be purchased on Linea with a given amount of WETH, without executing the trade. Mentions user’s wallet is empty and warns it’s only an estimate.",
+    "Estimates how many memecoins can be purchased on Linea with a given amount of ETH/WETH, without executing the trade. Emphasizes that it’s only an estimate, since memecoins are not on testnet and the user’s wallet is empty.",
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
@@ -48,33 +50,39 @@ export const estimateMemecoinPurchase: Action = {
     console.log("Starting memecoin purchase estimation on Linea...");
 
     try {
-      // 1) Prepare a public client (testnet or mainnet if needed)
+      // 1) Prepare a public client for the Linea mainnet settings (or testnet,
+      //    but memecoins do not actually exist on the testnet).
       const publicClient = createPublicClient({
         chain: linea,
         transport: http(),
       });
 
-      // 2) For demonstration, we read an environment variable for a private key
-      //    (not strictly needed here since we are only estimating).
-      //    We'll do it anyway in case you want to adapt it to sign something in the future.
+      // 2) We read an environment variable for a private key
+      //    (not strictly needed to just estimate).
       const agentPrivateKey = process.env.AGENT_PRIVATE_KEY?.startsWith("0x")
         ? (process.env.AGENT_PRIVATE_KEY as Hex)
         : (`0x${process.env.AGENT_PRIVATE_KEY}` as Hex);
 
       if (!agentPrivateKey) {
         console.log("No AGENT_PRIVATE_KEY found. Using read-only approach.");
+      } else {
+        // If we needed to sign something in the future, we could do so here.
+        privateKeyToAccount(agentPrivateKey);
       }
 
       // 3) Reference addresses
       const lynexRouterAddress = "0x610D2f07b7EdC67565160F587F37636194C34E74";
+      // We ONLY use WETH for the input token:
       const wETHLineaAddress = "0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f";
 
-      // Example memecoins (not actually available on testnet):
+      // Example memecoins (not actually tradable on testnet):
       const FOXY = "0x5FBDF89403270a1846F5ae7D113A989F850d1566";
       const CROAK = "0xaCb54d07cA167934F57F829BeE2cC665e1A5ebEF";
       const LINDA = "0x82cC61354d78b846016b559e3cCD766fa7E793D5";
 
-      // 4) Function to get a rough quote from the router
+      // 4) Function to get a rough quote from the router:
+      //    We are always dealing with WETH -> memecoin,
+      //    never stablecoins or other tokens.
       async function estimateTxOutput(
         amountIn: bigint,
         tokenIn: Address,
@@ -93,8 +101,9 @@ export const estimateMemecoinPurchase: Action = {
       }
 
       // 5) Example usage: Suppose user wants to see how many CROAK they can get for 0.1 WETH
+      //    We only do a demonstration here. In practice, the user might specify a custom amount.
       const amountWethToSpend = BigInt(0.1e18);
-      const memecoinAddress = CROAK; // or FOXY, LINDA, etc.
+      const memecoinAddress = CROAK; // This is just an example; could be FOXY or LINDA, etc.
 
       const estimatedAmountOut = await estimateTxOutput(
         amountWethToSpend,
@@ -104,15 +113,16 @@ export const estimateMemecoinPurchase: Action = {
 
       console.log(`Estimated memecoin out: ${estimatedAmountOut.toString()}`);
 
-      // 6) Construct the result message. Emphasize that the user’s wallet is empty, so no real trade can occur.
-      const resultText = `You could theoretically get ~${estimatedAmountOut.toString()} memecoins (CROAK) for 0.1 WETH on Linea. However, your wallet is empty on testnet, and these tokens are not actually tradable here. This is only an estimation.`;
+      // 6) Construct the result message. Emphasize that there is no actual trade
+      //    because memecoins are not on the testnet, and the user’s wallet is empty.
+      const resultText = `You could theoretically get ~${estimatedAmountOut.toString()} memecoins (CROAK) for 0.1 WETH on Linea. However, no real trade can be made here because these tokens are not on testnet and your wallet is empty. This is only an estimate.`;
 
       if (callback) {
         callback({
           text: resultText,
           content: {
             estimatedAmount: estimatedAmountOut.toString(),
-            note: "No actual trade executed. User wallet is empty, tokens not on testnet.",
+            note: "Only an estimation using WETH on Linea. No actual trade executed.",
           },
         });
       }
@@ -122,8 +132,8 @@ export const estimateMemecoinPurchase: Action = {
       console.error("Error estimating memecoin purchase:", error);
       if (callback) {
         callback({
-          text: `Error while estimating memecoin purchase: ${error.message}`,
-          content: { error: error.message },
+          text: `Error while estimating memecoin purchase: ${(error as Error).message}`,
+          content: { error: (error as Error).message },
         });
       }
       return false;
@@ -134,13 +144,13 @@ export const estimateMemecoinPurchase: Action = {
       {
         user: "{{user1}}",
         content: {
-          text: "How many CROAK can I buy with 0.1 WETH on Linea?",
+          text: "How many CROAK can I buy with 0.1 ETH on Linea?",
         },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "I'll estimate how many CROAK you'd receive for 0.1 WETH, but your wallet is empty, so this is only a simulation.",
+          text: "I'll estimate how many CROAK you'd receive for 0.1 ETH (converted to WETH), but your wallet is empty and these memecoins aren’t on testnet, so it's just a simulation.",
           action: "ESTIMATE_MEMECOIN_PURCHASE",
         },
       },
@@ -149,13 +159,13 @@ export const estimateMemecoinPurchase: Action = {
       {
         user: "{{user1}}",
         content: {
-          text: "Can you show me how many FOXY I'd get if I swapped 2 WETH on Linea testnet?",
+          text: "Can you estimate how much FOXY I'd get if I spent 2 ETH on Linea testnet?",
         },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "I can provide a rough estimate using the router's getAmountOut function. Keep in mind that there's no actual trade on testnet.",
+          text: "I can simulate the swap from 2 ETH (via WETH) to FOXY on Linea. Remember, we can’t actually trade memecoins on testnet; it's only a hypothetical quote.",
           action: "ESTIMATE_MEMECOIN_PURCHASE",
         },
       },
@@ -164,13 +174,13 @@ export const estimateMemecoinPurchase: Action = {
       {
         user: "{{user1}}",
         content: {
-          text: "I want to see how many LINDA tokens I'd get with 1.5 WETH on the testnet.",
+          text: "I'd like to see how many LINDA tokens I'd theoretically get for 1.5 ETH on the testnet.",
         },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "I'll calculate an approximate output using the router, but note that your wallet is empty and the trade cannot be executed on Linea testnet.",
+          text: "Sure. I'll provide a rough estimate using WETH on Linea. Keep in mind that your wallet is empty and these tokens aren't live on testnet.",
           action: "ESTIMATE_MEMECOIN_PURCHASE",
         },
       },
