@@ -1,14 +1,21 @@
-# ELIZA - CryptoRiskManager
+# ElizaFi – Safe Agentathon by LXers
 
-A DeFi risk management AI assistant that helps users navigate multi-chain cryptocurrency strategies across different risk profiles.
+Welcome to ElizaFi, our AI-powered DeFi risk management assistant built for the Safe Agentathon by Team LXers. This project uses ElizaOS as its framework, runs on Venice AI, and leverages the DeepSeek-R1-Llama-70B model to help users navigate multi-chain crypto strategies in a clear, secure, and user-verified manner.
 
-## Features
+---
 
-- **Low Risk Profile**: Manage stablecoin deposits, withdrawals, and swaps on Sepolia testnet
-- **Medium Risk Profile**: Handle ETH staking on Ankr and re-staking on EigenLayer (Holesky testnet)
-- **High Risk Profile**: Estimate memecoin purchases on Linea mainnet
-- **Smart Risk Management**: Customizable risk profiles with confirmation-based actions
-- **Multi-chain Support**: Operations across Sepolia, Holesky testnets and Linea mainnet
+## Project Overview
+
+ElizaFi is designed to guide you through DeFi strategies across different risk levels. It interacts with popular protocols and networks using Gnosis Safe for secure transaction management.
+
+This project is part of the Safe Agentathon and represents our honest effort to combine AI with decentralized finance.
+
+Our main changes, aside from those related to the ElizaOS framework, were the creation of 
+`./characters/cryptoriskmanager.character.json` and the development of the plugin 
+`./packages/plugin-safe`, along with adjustments to configuration files and the removal of 
+unused dependencies.
+
+---
 
 ## Prerequisites
 
@@ -56,29 +63,69 @@ In the second terminal:
 pnpm start --character="characters/cryptoriskmanager.character.json"
 ```
 
-## Risk Profiles
 
-### Low Risk
-- Deposit stablecoins (DAI, USDT, USDC) into Aave on Sepolia testnet
-- Manage positions using Gnosis Smart Wallet
-- Check APY and optimize yields through stablecoin swaps
+## Key Features
 
-### Medium Risk
-- Stake ETH on Ankr
-- Re-stake on EigenLayer (Holesky testnet)
-- Manage withdrawal timeframes (1 week for EigenLayer, 2 weeks for Ankr)
+- **Multi-Chain Operations:** It supports different networks:
+  - **Sepolia Testnet** for stablecoin yield and swaps.
+  - **Holesky Testnet** for ETH staking and restaking.
+  - **Linea Mainnet** for high-risk memecoin analysis and estimations.
+- **Secure Transactions:** Integrated with Gnosis Safe.
+- **Protocol Integrations:** The assistant interacts with:
+  - **Aave** for lending and yield generation.
+  - **Ankr** and **EigenLayer** for staking and restaking.
+  - **CowSwap** for stablecoin swaps with MEV protection.
+  - **DexScreener, Lynex & Linea** for memecoin market data.
 
-### High Risk
-- Estimate memecoin purchases on Linea mainnet
-- Simulate trading scenarios
-- Access market information and potential returns
+---
 
-## Important Notes
+## Risk Profiles & Their Functionalities
 
-- All actions require explicit user confirmation
-- The assistant always verifies risk profile before executing actions
-- Withdrawal timeframes are strictly enforced for medium risk operations
-- High risk operations are primarily informational/simulated
+### Low Risk – Stablecoin Yield Optimization (Sepolia Testnet)
+**What it does:**  
+- Allows you to supply stablecoins (DAI, USDT, USDC) to Aave to earn yield trough a Gnosis Smart Wallet.
+- Lets you withdraw your stablecoins when needed.
+- Offers stablecoin swaps via CowSwap for improved returns.
+
+**Protocols & Network:**  
+- **Aave, CowSwap, Gnosis Safe** on the **Sepolia Testnet**.
+
+**Actions Used:**
+- `SUPPLY_TO_AAVE`
+- `WITHDRAW_FROM_AAVE`
+- `TRADE_TO_COWSWAP`
+
+---
+
+### Medium Risk – ETH Staking & Restaking (Holesky Testnet)
+**What it does:**  
+- Helps you stake ETH on Ankr to receive ankrETH.
+- Provides an option to restake ankrETH on EigenLayer to potentially boost your returns.
+
+**Protocols & Network:**  
+- **Ankr, EigenLayer, Gnosis Safe** on the **Holesky Testnet**.
+
+**Actions Used:**
+- `STAKE_TO_ANKR`
+- `STAKE_TO_EIGEN`
+- `INITIATE_EIGEN_WITHDRAWAL`
+- `INITIATE_ANKR_WITHDRAWAL`
+---
+
+### High Risk – Memecoin Analysis & Estimation (Linea Mainnet)
+**What it does:**  
+- Evaluates memecoins (like FOXY, CROAK, and LINDA) using short-term momentum data from DexScreener.
+- Provides an estimation of how many memecoins you could buy with a given amount of ETH on Lynex.
+- Note: This feature is purely informational since memecoins are not available on testnets.
+
+**Protocols & Network:**  
+- **DexScreener, Lynex & Linea Mainnet**
+
+**Actions Used:**
+- `EVALUATE_BEST_MEMECOIN`
+- `ESTIMATE_MEMECOIN_PURCHASE`
+
+---
 
 ## Support
 
