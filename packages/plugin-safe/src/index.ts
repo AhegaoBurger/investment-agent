@@ -7,6 +7,7 @@ import { withdraw } from "./actions/aaveWithdraw.ts";
 import { initiateAnkrWithdrawal } from "./actions/ankrWithdraw.ts";
 import { initiateEigenWithdrawal } from "./actions/eigenWithdraw.ts";
 import { estimateMemecoinPurchase } from "./actions/tradeLinex.ts";
+import { evaluateBestMemecoin } from "./actions/getBestMeme.ts";
 
 import { balanceProvider } from "./providers/checkBalance.ts";
 import { apyProvider } from "./providers/getApy.ts";
@@ -24,6 +25,7 @@ export const safePlugin: Plugin = {
     initiateAnkrWithdrawal,
     initiateEigenWithdrawal,
     estimateMemecoinPurchase,
+    evaluateBestMemecoin
   ],
   evaluators: [],
   providers: [balanceProvider, apyProvider],
