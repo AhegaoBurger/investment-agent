@@ -162,7 +162,7 @@ export class CowSwapAction {
     console.log("cowSdk done");
 
     const parameters: TradeParameters = {
-      kind: OrderKind.BUY,
+      kind: OrderKind.SELL,
       sellToken: sellTokenConfig.address,
       sellTokenDecimals: sellTokenConfig.decimals,
       buyToken: buyTokenConfig.address,

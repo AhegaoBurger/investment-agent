@@ -28,7 +28,46 @@ import { AnkrTokenAbi } from "../abi/AnkrToken";
 import { eigenStrategy } from "../abi/EigenStrategy";
 import { eigenDelegationAbi } from "../abi/EigenDelegationAbi";
 
-export const stakeToAnkrAndEigen: Action = {
+import { stakeTemplate } from "../templates";
+import type { StakeParams, StakeResponse } from "../types";
+
+const buildStakeDetails = async (
+  state: State,
+  runtime: IAgentRuntime
+): Promise<StakeParams> => {
+  const context = composeContext({
+    state,
+    template: stakeTemplate,
+  });
+
+  console.log("context: ", context);
+
+  const stakeDetails = (await generateObjectDeprecated({
+    runtime,
+    context,
+    modelClass: ModelClass.SMALL,
+  })) as StakeParams;
+
+  console.log("stakeDetails: ", stakeDetails);
+
+  return stakeDetails;
+};
+
+async function formatAmount(amount: string, decimals: number): Promise<bigint> {
+  // Remove any commas from the amount string
+  const cleanAmount = amount.replace(/,/g, "");
+
+  // Convert to number and multiply by 10^decimals
+  const parsedAmount = parseFloat(cleanAmount);
+  const multiplier = Math.pow(10, decimals);
+  const scaledAmount = parsedAmount * multiplier;
+
+  // Convert to bigint, handling any floating point precision issues
+  return BigInt(Math.round(scaledAmount));
+}
+
+
+export const stakeToEigen: Action = {
   name: "STAKE_TO_ANKR_AND_EIGEN",
   similes: [
     "RESTAKE_ON_EIGENLAYER",
@@ -136,6 +175,7 @@ export const stakeToAnkrAndEigen: Action = {
         value: 0,
         args: [ankrtokenstrategy, ankrTokenAddress, amountToDeposit],
       });
+      console.log("request: ", request)
       await walletClient.writeContract(request);
       console.log("✓ Successfully restaked on EigenLayer");
     }
@@ -168,12 +208,17 @@ export const stakeToAnkrAndEigen: Action = {
     // EXAMPLE MAIN LOGIC
     // --------------------------------
     try {
-      // For demonstration, assume user wants to stake 1 ETH into Ankr
-      // Then restake all aETH into EigenLayer
-      const ONE_ETH_IN_WEI = BigInt(10000000000000000);
+    const stakeParams = await buildStakeDetails(state, runtime);
+
+    // Format the amount with proper decimals
+    const scaledAmount = await formatAmount(stakeParams.amount, 18);
+
+      // // For demonstration, assume user wants to stake 1 ETH into Ankr
+      // // Then restake all aETH into EigenLayer
+      // const ONE_ETH_IN_WEI = BigInt(scaledAmount);
 
       // 1) Stake ETH into Ankr
-      await depositEthAnkr(ONE_ETH_IN_WEI);
+      await depositEthAnkr(BigInt(scaledAmount));
 
       // 2) If required, approve the new aETH tokens for the Eigen strategy
       // await approveAnkrTokenOnEigen();
@@ -182,7 +227,7 @@ export const stakeToAnkrAndEigen: Action = {
       // The actual minted amount depends on Ankr’s exchange rate
       // For a placeholder, let's assume user minted 1 aETH = 1 ankrToken
       // In reality, you would query the new balance, then deposit that exact amount:
-      await depositIntoStrategy(ONE_ETH_IN_WEI);
+      await depositIntoStrategy(BigInt(scaledAmount));
 
       // 4) (Optional) delegate
       // await delegate(ONE_ETH_IN_WEI);
@@ -224,7 +269,7 @@ export const stakeToAnkrAndEigen: Action = {
       {
         user: "{{agentName}}",
         content: {
-          text: "Sure! I'll deposit your ETH into Ankr to mint aETH, then restake that aETH on EigenLayer for extra yield.",
+          text: "Sure! I'll deposit your ETH into Ankr to mint ankrETH, then restake that aETH on EigenLayer for extra yield.",
           action: "STAKE_TO_ANKR_AND_EIGEN",
         },
       },
@@ -239,7 +284,7 @@ export const stakeToAnkrAndEigen: Action = {
       {
         user: "{{agentName}}",
         content: {
-          text: "Certainly. I'll handle the deposit to Ankr and reinvest those aETH tokens on EigenLayer for added returns.",
+          text: "Certainly. I'll handle the deposit to Ankr and reinvest those ankrETH tokens on EigenLayer for added returns.",
           action: "STAKE_TO_ANKR_AND_EIGEN",
         },
       },
@@ -248,13 +293,13 @@ export const stakeToAnkrAndEigen: Action = {
       {
         user: "{{user1}}",
         content: {
-          text: "Help me stake my ETH to get aETH and delegate it on EigenLayer to nethermind.",
+          text: "Help me stake my ETH to get ankrETH and delegate it on EigenLayer to nethermind.",
         },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "I'll stake your ETH on Ankr for aETH, restake on EigenLayer, and can optionally handle delegation if you like.",
+          text: "I'll stake your ETH on Ankr for ankrETH, restake on EigenLayer, and can optionally handle delegation if you like.",
           action: "STAKE_TO_ANKR_AND_EIGEN",
         },
       },

@@ -1,13 +1,17 @@
 import type { Plugin } from "@elizaos/core";
 
 import { supplyToAave } from "./actions/aaveSupply.ts";
-import { tradeToCowSwap } from "./actions/tradeToCowSwap.ts";
-import { stakeToAnkrAndEigen } from "./actions/eigenDeposit.ts";
 import { withdraw } from "./actions/aaveWithdraw.ts";
+
+import { stakeToEigen } from "./actions/eigenDeposit.ts";
+import { stakeToAnkr} from "./actions/ankrDeposit.ts";
+
 import { initiateAnkrWithdrawal } from "./actions/ankrWithdraw.ts";
 import { initiateEigenWithdrawal } from "./actions/eigenWithdraw.ts";
+
 import { estimateMemecoinPurchase } from "./actions/tradeLinex.ts";
 import { evaluateBestMemecoin } from "./actions/getBestMeme.ts";
+import { tradeToCowSwap } from "./actions/tradeToCowSwap.ts";
 
 import { balanceProvider } from "./providers/checkBalance.ts";
 import { apyProvider } from "./providers/getApy.ts";
@@ -20,7 +24,7 @@ export const safePlugin: Plugin = {
   actions: [
     supplyToAave,
     tradeToCowSwap,
-    stakeToAnkrAndEigen,
+    stakeToEigen,
     withdraw,
     initiateAnkrWithdrawal,
     initiateEigenWithdrawal,
@@ -28,6 +32,6 @@ export const safePlugin: Plugin = {
     evaluateBestMemecoin
   ],
   evaluators: [],
-  providers: [balanceProvider, apyProvider],
+  providers: [balanceProvider, apyProvider, holeSkyBalanceProvider],
 };
 export default safePlugin;
