@@ -151,35 +151,71 @@ export const stakeToAnkr: Action = {
     }
   },
   examples: [
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "Please stake some ETH into Ankr to get ankrEth.",
+        [
+        {
+            user: "{{user1}}",
+            content: {
+            text: "Please stake some ETH into Ankr to get ankrEth.",
+            },
         },
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: "Sure! I'll deposit your ETH into Ankr to mint ankrEth.",
-          action: "STAKE_TO_ANKR",
+        {
+            user: "{{agentName}}",
+            content: {
+            text: "I can do that. How much ETH would you like to deposit?",
+            },
         },
-      },
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "I'd like to deposit 0.001 ETH into Ankr, can you do that?",
+        {
+            user: "{{user1}}",
+            content: {
+            text: "I want to deposit 0.001 ETH.",
+            },
         },
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: "Absolutely. I'll handle the deposit to Ankr and you'll receive ankrEth.",
-          action: "STAKE_TO_ANKR",
+        {
+            user: "{{agentName}}",
+            content: {
+            text: "Understood. You’d like to deposit 0.001 ETH into Ankr. Shall I proceed?\n**(Awaiting confirmation to call STAKE_TO_ANKR)**",
+            },
         },
-      },
-    ],
-  ] as ActionExample[][],
+        {
+            user: "{{user1}}",
+            content: {
+            text: "Yes, please proceed.",
+            },
+        },
+        {
+            user: "{{agentName}}",
+            content: {
+            action: "STAKE_TO_ANKR",
+            text: "Staking 0.001 ETH in Ankr now...",
+            },
+        },
+        ],
+        [
+        {
+            user: "{{user1}}",
+            content: {
+            text: "I'd like to deposit 0.01 ETH into Ankr, can you do that?",
+            },
+        },
+        {
+            user: "{{agentName}}",
+            content: {
+            text: "Sure. You want to deposit 0.01 ETH into Ankr. Confirm to proceed?\n**(Awaiting confirmation to call STAKE_TO_ANKR)**",
+            },
+        },
+        {
+            user: "{{user1}}",
+            content: {
+            text: "Yes, confirm.",
+            },
+        },
+        {
+            user: "{{agentName}}",
+            content: {
+            action: "STAKE_TO_ANKR",
+            text: "Staking 0.01 ETH in Ankr now...",
+            },
+        },
+        ],
+    ] as ActionExample[][],
 };

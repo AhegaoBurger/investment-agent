@@ -260,49 +260,97 @@ export const stakeToEigen: Action = {
   },
   examples: [
     [
-      {
+    {
         user: "{{user1}}",
         content: {
-          text: "Please stake 1 ETH into Ankr, then restake it on EigenLayer.",
+        text: "I'd like to deposit 2 ankrETH into EigenLayer. Can you do that?",
         },
-      },
-      {
+    },
+    {
         user: "{{agentName}}",
         content: {
-          text: "Sure! I'll deposit your ETH into Ankr to mint ankrETH, then restake that aETH on EigenLayer for extra yield.",
-          action: "STAKE_TO_ANKR_AND_EIGEN",
+        text: "Sure! You want to deposit 2 ankrETH on EigenLayer. Shall I proceed?\n**(Awaiting confirmation to call STAKE_TO_EIGEN)**",
         },
-      },
+    },
+    {
+        user: "{{user1}}",
+        content: {
+        text: "Yes, please do it.",
+        },
+    },
+    {
+        user: "{{agentName}}",
+        content: {
+        action: "STAKE_TO_EIGEN",
+        text: "Depositing 2 ankrETH into EigenLayer now...",
+        },
+    },
     ],
     [
-      {
+    {
         user: "{{user1}}",
         content: {
-          text: "I'd like to deposit some ETH into Ankr and then restake on EigenLayer. Can you do that?",
+        text: "I have some ankrETH from Ankr, I'd like to restake it on EigenLayer for additional yield.",
         },
-      },
-      {
+    },
+    {
         user: "{{agentName}}",
         content: {
-          text: "Certainly. I'll handle the deposit to Ankr and reinvest those ankrETH tokens on EigenLayer for added returns.",
-          action: "STAKE_TO_ANKR_AND_EIGEN",
+        text: "Understood. How much ankrETH do you want to deposit on EigenLayer?",
         },
-      },
+    },
+    {
+        user: "{{user1}}",
+        content: {
+        text: "Let's go with 0.5 ankrETH.",
+        },
+    },
+    {
+        user: "{{agentName}}",
+        content: {
+        text: "You want to stake 0.5 ankrETH on EigenLayer. Confirm to proceed?\n**(Awaiting confirmation to call STAKE_TO_EIGEN)**",
+        },
+    },
+    {
+        user: "{{user1}}",
+        content: {
+        text: "Confirm, let's do it.",
+        },
+    },
+    {
+        user: "{{agentName}}",
+        content: {
+        action: "STAKE_TO_EIGEN",
+        text: "Restaking 0.5 ankrETH on EigenLayer now...",
+        },
+    },
     ],
     [
-      {
+    {
         user: "{{user1}}",
         content: {
-          text: "Help me stake my ETH to get ankrETH and delegate it on EigenLayer to nethermind.",
+        text: "Please help me deposit 1 ankrETH on EigenLayer and also delegate it to a specific operator for extra rewards.",
         },
-      },
-      {
+    },
+    {
         user: "{{agentName}}",
         content: {
-          text: "I'll stake your ETH on Ankr for ankrETH, restake on EigenLayer, and can optionally handle delegation if you like.",
-          action: "STAKE_TO_ANKR_AND_EIGEN",
+        text: "Sure. I can deposit your 1 ankrETH into EigenLayer and then delegate to your chosen operator. Shall I proceed?\n**(Awaiting confirmation to call STAKE_TO_EIGEN)**",
         },
-      },
+    },
+    {
+        user: "{{user1}}",
+        content: {
+        text: "Yes, proceed.",
+        },
+    },
+    {
+        user: "{{agentName}}",
+        content: {
+        action: "STAKE_TO_EIGEN",
+        text: "Depositing 1 ankrETH on EigenLayer and delegating now...",
+        },
+    },
     ],
-  ] as ActionExample[][],
+] as ActionExample[][],
 };
