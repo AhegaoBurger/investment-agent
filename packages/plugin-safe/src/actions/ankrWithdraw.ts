@@ -5,6 +5,9 @@ import {
   type Action,
   type HandlerCallback,
   type State,
+  composeContext,
+  generateObjectDeprecated,
+  ModelClass,
 } from "@elizaos/core";
 
 import { createPublicClient, createWalletClient, http } from "viem";
@@ -13,6 +16,44 @@ import { holesky } from "viem/chains";
 
 import { AnkrAbi } from "../abi/AnkrAbi";
 import { AnkrTokenAbi } from "../abi/AnkrToken";
+
+import { stakeTemplate } from "../templates";
+import type { StakeParams, StakeResponse } from "../types";
+
+const buildStakeDetails = async (
+  state: State,
+  runtime: IAgentRuntime
+): Promise<StakeParams> => {
+  const context = composeContext({
+    state,
+    template: stakeTemplate,
+  });
+
+  console.log("context: ", context);
+
+  const stakeDetails = (await generateObjectDeprecated({
+    runtime,
+    context,
+    modelClass: ModelClass.SMALL,
+  })) as StakeParams;
+
+  console.log("stakeDetails: ", stakeDetails);
+
+  return stakeDetails;
+};
+
+async function formatAmount(amount: string, decimals: number): Promise<bigint> {
+  // Remove any commas from the amount string
+  const cleanAmount = amount.replace(/,/g, "");
+
+  // Convert to number and multiply by 10^decimals
+  const parsedAmount = parseFloat(cleanAmount);
+  const multiplier = Math.pow(10, decimals);
+  const scaledAmount = parsedAmount * multiplier;
+
+  // Convert to bigint, handling any floating point precision issues
+  return BigInt(Math.round(scaledAmount));
+}
 
 /**
  * ACTION: INITIATE_ANKR_WITHDRAWAL
@@ -81,15 +122,19 @@ export const initiateAnkrWithdrawal: Action = {
       }
 
       // For demonstration, assume user wants to unstake 1 aETH
-      const amountToUnstake = BigInt(1e18);
-      await initiateAnkrUnstake(amountToUnstake);
+
+      const stakeParams = await buildStakeDetails(state, runtime);
+
+      // Format the amount with proper decimals
+      const scaledAmount = await formatAmount(stakeParams.amount, 18);
+      await initiateAnkrUnstake(BigInt(scaledAmount));
 
       // STEP 4: Return success or handle errors
       if (callback) {
         callback({
           text: "Ankr unbonding initiated. You'll need to wait the unbonding period before fully withdrawing your ETH.",
           content: {
-            requestedUnstakeAmount: amountToUnstake.toString(),
+            requestedUnstakeAmount: scaledAmount.toString(),
             note: "Check your position after the waiting period to finalize.",
           },
         });

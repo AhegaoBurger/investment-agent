@@ -68,15 +68,10 @@ async function formatAmount(amount: string, decimals: number): Promise<bigint> {
 
 
 export const stakeToEigen: Action = {
-  name: "STAKE_TO_ANKR_AND_EIGEN",
+  name: "STAKE_TO_EIGEN",
   similes: [
     "RESTAKE_ON_EIGENLAYER",
-    "ANKR_EIGEN_DEPOSIT",
-    "LIQUID_RESTAKING_EIGEN",
-    "EIGEN_ANKR_STAKE",
-    "DUAL_STAKE_EIGEN",
     "EIGENLAYER_DEPOSIT",
-    "ANKR_TO_EIGEN_STAKE",
     "COMPOUND_STAKE_EIGEN",
   ],
   validate: async (_runtime: IAgentRuntime, _message: Memory) => {
