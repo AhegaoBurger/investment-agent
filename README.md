@@ -10,6 +10,13 @@ A DeFi risk management AI assistant that helps users navigate multi-chain crypto
 - **Smart Risk Management**: Customizable risk profiles with confirmation-based actions
 - **Multi-chain Support**: Operations across Sepolia, Holesky testnets and Linea mainnet
 
+## Prerequisites
+
+- [Python 2.7+](https://www.python.org/downloads/)
+- [Node.js 23+](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
+- [pnpm](https://pnpm.io/installation)
+
+
 ## Environment Setup
 
 Create a `.env` file in the root directory with the following variables:
@@ -27,6 +34,7 @@ Make sure to replace the placeholder values with your actual credentials.
 1. Clone the repository:
 ```bash
 git clone https://github.com/AhegaoBurger/investment-agent
+cd investment-agent
 ```
 
 2. Install dependencies:
