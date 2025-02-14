@@ -10,6 +10,7 @@ import { estimateMemecoinPurchase } from "./actions/tradeLinex.ts";
 
 import { balanceProvider } from "./providers/checkBalance.ts";
 import { apyProvider } from "./providers/getApy.ts";
+import { holeSkyBalanceProvider} from "./providers/holeskyCheckBalance.ts"
 
 export const safePlugin: Plugin = {
   name: "safe",

@@ -17,8 +17,95 @@ import { AavePoolAbi } from "../abi/AavePool";
 import { UsdcTokenAbi } from "../abi/UsdcToken";
 import { UsdtTokenAbi } from "../abi/UsdtToken";
 import { DaiTokenAbi } from "../abi/DaiToken";
+import { stakeTemplate } from "../templates";
+import type { StakeParams, StakeResponse } from "../types";
 
 import { MetaTransactionData, OperationType } from "@safe-global/types-kit";
+
+const buildStakeDetails = async (
+  state: State,
+  runtime: IAgentRuntime
+): Promise<StakeParams> => {
+  const context = composeContext({
+    state,
+    template: stakeTemplate,
+  });
+
+  console.log("context: ", context);
+
+  const stakeDetails = (await generateObjectDeprecated({
+    runtime,
+    context,
+    modelClass: ModelClass.SMALL,
+  })) as StakeParams;
+
+  console.log("stakeDetails: ", stakeDetails);
+
+  return stakeDetails;
+};
+
+async function getTokenConfig(token: string): Promise<{
+  address: string;
+  abi: any;
+  decimals: number;
+}> {
+  // Check if it's already an address
+  if (token.startsWith("0x")) {
+    return {
+      address: token,
+      abi: UsdcTokenAbi,
+      decimals: 6, // Default decimals - you might want to handle this differently
+    };
+  }
+
+  // Convert to uppercase to match our mapping
+  const upperToken = token.toUpperCase() as TokenSymbol;
+
+  // Get config from mapping
+  const tokenConfig = TOKEN_CONFIG[upperToken];
+  if (!tokenConfig) {
+    throw new Error(`Unsupported token: ${token}`);
+  }
+
+  return tokenConfig;
+}
+
+async function formatAmount(amount: string, decimals: number): Promise<bigint> {
+  // Remove any commas from the amount string
+  const cleanAmount = amount.replace(/,/g, "");
+
+  // Convert to number and multiply by 10^decimals
+  const parsedAmount = parseFloat(cleanAmount);
+  const multiplier = Math.pow(10, decimals);
+  const scaledAmount = parsedAmount * multiplier;
+
+  // Convert to bigint, handling any floating point precision issues
+  return BigInt(Math.round(scaledAmount));
+}
+
+const TOKEN_CONFIG = {
+  USDC: {
+    address: "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8",
+    abi: UsdcTokenAbi,
+    decimals: 6,
+  },
+  USDT: {
+    address: "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0",
+    abi: UsdtTokenAbi,
+    decimals: 6,
+  },
+  DAI: {
+    address: "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357",
+    abi: DaiTokenAbi,
+    decimals: 18,
+  },
+  // WETH: {
+  //   address: "0xC558DBdd856501FCd9aaF1E62eae57A9F0629a3c",
+  //   abi: WethTokenAbi,
+  // },
+} as const;
+
+type TokenSymbol = keyof typeof TOKEN_CONFIG;
 
 export const withdraw: Action = {
   name: "WITHDRAW_FROM_AAVE",
@@ -30,13 +117,17 @@ export const withdraw: Action = {
     "AAVE_REMOVE",
     "REDEEM_FROM_AAVE",
   ],
+  suppressInitialMessage: true,
   validate: async (_runtime: IAgentRuntime, _message: Memory) => {
     return true;
   },
   description: "Withdraws tokens from the AAVE lending protocol",
   handler: async (
-    _runtime: IAgentRuntime,
-    _message: Memory
+    runtime: IAgentRuntime,
+    _message: Memory,
+    state: State,
+    _options: any,
+    callback?: HandlerCallback
   ): Promise<boolean> => {
     console.log(
       "process.env.RPC_URL",
@@ -50,11 +141,11 @@ export const withdraw: Action = {
     const exSafe = Safe.default;
 
     // You might want to handle multiple stablecoins at once, so keep them generic:
-    const STABLECOIN_ADDRESSES = {
-      USDC: "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8",
-      USDT: "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0",
-      DAI: "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357",
-    };
+    // const STABLECOIN_ADDRESSES = {
+    //   USDC: "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8",
+    //   USDT: "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0",
+    //   DAI: "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357",
+    // };
 
     const agentPrivateKey = process.env.AGENT_PRIVATE_KEY;
     const safeAddress = "0x6485A7046704ca7127B6D9Db3a3519F41C4976c0";
@@ -67,6 +158,14 @@ export const withdraw: Action = {
       safeAddress: safeAddress,
     });
 
+    const stakeParams = await buildStakeDetails(state, runtime);
+
+    // Get the actual token address
+    const tokenConfig = await getTokenConfig(stakeParams.token);
+
+    // Format the amount with proper decimals
+    const scaledAmount = await formatAmount(stakeParams.amount, tokenConfig.decimals);
+
     // Example: withdrawing maximum USDC
     // If you need to withdraw multiple tokens, you can create an array of transactions
     // and push them all into one Safe transaction batch.
@@ -74,12 +173,10 @@ export const withdraw: Action = {
       abi: AavePoolAbi,
       functionName: "withdraw",
       args: [
-        STABLECOIN_ADDRESSES.USDC as `0x${string}`,
+        tokenConfig.address as `0x${string}`,
         // Using the maximum integer for withdrawal
         // (or replace with the user-specified amount)
-        BigInt(
-          "115792089237316195423570985008687907853269984665640564039457584007913129639935"
-        ),
+        BigInt(scaledAmount),
         safeAddress,
       ],
     });
@@ -104,6 +201,12 @@ export const withdraw: Action = {
     const txResponse = await preExistingSafe.executeTransaction(tx);
 
     console.log("transaction executed", txResponse);
+
+    if (callback) {
+      callback({
+        text: `Successfully staked ${stakeParams.amount} ${stakeParams.token} to AAVE\nTransaction Hash: ${txResponse.hash}`,
+      });
+    }
 
     return true;
   },
