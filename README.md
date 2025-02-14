@@ -10,6 +10,18 @@ A DeFi risk management AI assistant that helps users navigate multi-chain crypto
 - **Smart Risk Management**: Customizable risk profiles with confirmation-based actions
 - **Multi-chain Support**: Operations across Sepolia, Holesky testnets and Linea mainnet
 
+## Environment Setup
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+AGENT_PRIVATE_KEY=your_private_key_here
+RPC_URL=your_rpc_url_here
+SAFE_ADDRESS=your_safe_address_here
+```
+
+Make sure to replace the placeholder values with your actual credentials.
+
 ## Installation
 
 1. Clone the repository:
@@ -20,6 +32,11 @@ git clone https://github.com/AhegaoBurger/investment-agent
 2. Install dependencies:
 ```bash
 pnpm install --no-frozen-lockfile
+```
+
+3. Build the project:
+```bash
+pnpm run build
 ```
 
 ## Usage
