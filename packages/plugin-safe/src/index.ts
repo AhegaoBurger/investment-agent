@@ -4,7 +4,7 @@ import { supplyToAave } from "./actions/aaveSupply.ts";
 import { withdraw } from "./actions/aaveWithdraw.ts";
 
 import { stakeToEigen } from "./actions/eigenDeposit.ts";
-import { stakeToAnkr} from "./actions/ankrDeposit.ts";
+import { stakeToAnkr } from "./actions/ankrDeposit.ts";
 
 import { initiateAnkrWithdrawal } from "./actions/ankrWithdraw.ts";
 import { initiateEigenWithdrawal } from "./actions/eigenWithdraw.ts";
@@ -25,6 +25,7 @@ export const safePlugin: Plugin = {
     supplyToAave,
     tradeToCowSwap,
     stakeToEigen,
+    stakeToAnkr,
     withdraw,
     initiateAnkrWithdrawal,
     initiateEigenWithdrawal,

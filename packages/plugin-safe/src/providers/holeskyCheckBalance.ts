@@ -42,6 +42,8 @@ import {
     get: async () => {
       try {
         const walletBalance = await getWalletBalance(ANKRETH_HOLESKY_ADDRESS);
+        console.log("ankrETH balance on Holesky:", walletBalance);
+        console.log("ankrETH formatted balance on Holesky:", formatTokenAmount(walletBalance, DECIMALS));
         return `Your ankrETH balance on Holesky: ${formatTokenAmount(walletBalance, DECIMALS)} ankrETH`;
       } catch (error) {
         return `Error retrieving ankrETH balance: ${error}`;
